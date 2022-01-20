@@ -12,6 +12,9 @@ import AddValueButton from "../../components/add-button";
 import {Link} from 'react-router-dom'
 import HelpIcon from "../../components/help"
 import * as yup from "yup";
+import Tippy from '@tippyjs/react';
+import 'tippy.js/dist/tippy.css';
+import { VscInfo } from "react-icons/vsc";
 
 export default function ServicesPanel(props) {
     const {namespace} = props
@@ -27,7 +30,7 @@ export default function ServicesPanel(props) {
 }
 
 export function ServiceCreatePanel(props) {
-    const {name, setName, image, setImage, scale, setScale, size, setSize, cmd, setCmd, maxscale} = props
+    const {name, setName, image, setImage, scale, setScale, size, setSize, cmd, setCmd, maxScale} = props
 
     return(
         <FlexBox className="col gap" style={{fontSize: "12px"}}>
@@ -49,7 +52,7 @@ export function ServiceCreatePanel(props) {
                 Scale
             </FlexBox>
             <FlexBox className="gap" style={{paddingRight:"10px"}}>
-                <input type="range" style={{paddingLeft:"0px"}} min={"0"} max={maxscale.toString()} value={scale.toString()} onChange={(e)=>setScale(e.target.value)} />
+                <input type="range" style={{paddingLeft:"0px"}} min={"0"} max={maxScale.toString()} value={scale.toString()} onChange={(e)=>setScale(e.target.value)} />
             </FlexBox>
             <FlexBox className="gap" style={{margin: "-6px 0 -10px 0"}}>
                 Size
@@ -94,13 +97,14 @@ function NamespaceServices(props) {
             .then((result) => setIsButtonDisabled(!result))
 
     },[serviceValidationSchema, image, serviceName])
+    const [maxScale, setMaxScale] = useState(0)
 
     const {data, err, config, getNamespaceConfig, getNamespaceServices, createNamespaceService, deleteNamespaceService} = useNamespaceServices(Config.url, true, namespace, localStorage.getItem("apikey"))
 
     useEffect(()=>{
         async function getcfg() {
-            await getNamespaceConfig()
-            await getNamespaceServices()
+            await getNamespaceConfig().then(response => setMaxScale(response.maxscale));
+            await getNamespaceServices();
         }
         if(load && config === null && data === null) {
             getcfg()
@@ -156,7 +160,7 @@ function NamespaceServices(props) {
                     ]}
                 >
                     {config !== null ? 
-                        <ServiceCreatePanel cmd={cmd} setCmd={setCmd} size={size} setSize={setSize} name={serviceName} setName={setServiceName} image={image} setImage={setImage} scale={scale} setScale={setScale} maxscale={config.maxscale} />
+                        <ServiceCreatePanel cmd={cmd} setCmd={setCmd} size={size} setSize={setSize} name={serviceName} setName={setServiceName} image={image} setImage={setImage} scale={scale} setScale={setScale} maxScale={maxScale} />
                         :
                         ""
                     }

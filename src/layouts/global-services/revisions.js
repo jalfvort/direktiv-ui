@@ -34,6 +34,7 @@ export default function GlobalRevisionsPanel(props){
             .then((result) => setIsButtonDisabled(!result))
 
     },[revisionValidationSchema, image])
+    const [maxScale, setMaxScale] = useState(0)
 
     useEffect(()=>{
         if(revisions !== null && revisions.length > 0) {
@@ -46,7 +47,7 @@ export default function GlobalRevisionsPanel(props){
 
     useEffect(()=>{
         async function cfgGet() {
-            await getServiceConfig()
+            await getServiceConfig().then(response => setMaxScale(response.maxscale));
         }
         if(load && config === null) {
             cfgGet()
@@ -86,7 +87,7 @@ export default function GlobalRevisionsPanel(props){
                                 actionButtons={[
                                     ButtonDefinition("Add", async () => {
                                         await createGlobalServiceRevision(image, parseInt(scale), parseInt(size), cmd, parseInt(trafficPercent))
-                                    }, `small ${isButtonDisabled ? "disabled": "blue"}`, (err)=>{return err},true,true),
+                                    }, "small blue", ()=>{}, true, false),
                                     ButtonDefinition("Cancel", () => {
                                     }, "small light", ()=>{}, true, false)
                                 ]}
@@ -98,7 +99,7 @@ export default function GlobalRevisionsPanel(props){
                                     size={size} setSize={setSize}
                                     cmd={cmd} setCmd={setCmd}
                                     traffic={trafficPercent} setTraffic={setTrafficPercent}
-                                    maxscale={config.maxscale}
+                                    maxScale={maxScale}
                                 />:""}
                             </Modal>
                         </div>

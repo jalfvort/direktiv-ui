@@ -18,6 +18,7 @@ import 'rc-slider/assets/index.css';
 import { useNavigate } from 'react-router';
 import * as yup from "yup";
 import HelpIcon from "../../../components/help";
+import { AutoSizer } from 'react-virtualized';
 
 function RevisionTab(props) {
 
@@ -79,7 +80,7 @@ function RevisionTab(props) {
                         <TabbedButtons revision={revision} setSearchParams={setSearchParams} searchParams={searchParams} tabBtn={tabBtn} setTabBtn={setTabBtn} />
                     </ContentPanelTitle>
                     <ContentPanelBody style={{padding: "0px"}}>
-                        {tabBtn === 0 ? 
+                        {tabBtn === 0 ?
                             <FlexBox className="col" style={{overflow:"hidden"}}>
                                 <FlexBox >
                                     <DirektivEditor style={{borderRadius: "0px"}} value={workflow} readonly={true} disableBottomRadius={true} dlang="yaml" />
@@ -120,8 +121,14 @@ function RevisionTab(props) {
                                                 </div>
                                             )}
                                         >
-                                            <FlexBox style={{overflow:"hidden"}}>
-                                                <DirektivEditor height="200" width="300" dlang="json" dvalue={input} setDValue={setInput}/>
+                                            <FlexBox style={{height: "40vh", width: "30vw", minWidth: "250px", minHeight: "200px"}}>
+                                                <FlexBox style={{overflow:"hidden"}}>
+                                                    <AutoSizer>
+                                                        {({height, width})=>(
+                                                            <DirektivEditor height={height} width={width} dlang="json" dvalue={input} setDValue={setInput}/>
+                                                        )}
+                                                    </AutoSizer>
+                                                </FlexBox>
                                             </FlexBox>
                                         </Modal>
                                     </div>

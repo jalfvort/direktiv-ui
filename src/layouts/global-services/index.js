@@ -32,11 +32,12 @@ export default function GlobalServicesPanel(props) {
             .then((result) => setIsButtonDisabled(!result))
 
     },[serviceValidationSchema, image, serviceName])
+    const [maxScale, setMaxScale] = useState(0)
 
     useEffect(()=>{
         async function getcfg() {
-            await getConfig()
-            await getGlobalServices()
+            await getConfig().then(response => setMaxScale(response.maxscale));
+            await getGlobalServices();
         }
         if(load && config === null && data === null) {
             getcfg()
@@ -91,8 +92,8 @@ export default function GlobalServicesPanel(props) {
                             }, "small light", ()=>{}, true, false)
                         ]}
                     >
-                        {config !== null ?
-                            <ServiceCreatePanel cmd={cmd} setCmd={setCmd} size={size} setSize={setSize} name={serviceName} setName={setServiceName} image={image} setImage={setImage} scale={scale} setScale={setScale} maxscale={config.maxscale} />
+                        {config !== null ? 
+                            <ServiceCreatePanel maxScale={maxScale} cmd={cmd} setCmd={setCmd} size={size} setSize={setSize} name={serviceName} setName={setServiceName} image={image} setImage={setImage} scale={scale} setScale={setScale} />
                             :
                             ""
                         }

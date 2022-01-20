@@ -10,7 +10,7 @@ import { FcWorkflow } from 'react-icons/fc';
 import { HiOutlineTrash } from 'react-icons/hi';
 import { useNodes } from 'direktiv-react-hooks';
 import { useNavigate, useParams } from 'react-router';
-import Modal, {ButtonDefinition} from '../../components/modal'
+import Modal, {ButtonDefinition, KeyDownDefinition} from '../../components/modal'
 import DirektivEditor from '../../components/editor';
 import { BsCodeSlash } from 'react-icons/bs';
 import Button from '../../components/button';
@@ -24,6 +24,7 @@ import { AutoSizer } from 'react-virtualized';
 import * as yup from "yup";
 import { FaAppStoreIos } from 'react-icons/fa';
 import Editor from '@monaco-editor/react';
+import Alert from '../../components/alert';
 
 const apiHelps = (namespace) => {
     let url = window.location.origin
@@ -176,6 +177,8 @@ const orderFieldKeys = Object.keys(orderFieldDictionary)
 function ExplorerList(props) {
     const {namespace, path} = props
     const navigate= useNavigate()
+    const [orderFieldKey, setOrderFieldKey] = useState(orderFieldKeys[0])
+    const {data, err, templates, pageInfo, createNode, deleteNode, renameNode } = useNodes(Config.url, true, namespace, path, localStorage.getItem("apikey"), `order.field=${orderFieldDictionary[orderFieldKey]}`)
     
     //api helper modal
     const [showApiHelper, setShowApiHelper] = useState(false)
@@ -186,17 +189,15 @@ function ExplorerList(props) {
     const [workflowName, setWorkflowName] = useState("")
     const [load, setLoad] = useState(true)
 
-    const [orderFieldKey, setOrderFieldKey] = useState(orderFieldKeys[0])
 
-    const [wfData, setWfData] = useState("")
-    const [wfTemplate, setWfTemplate] = useState("")
+    const [wfData, setWfData] = useState(templates["noop"])
+    const [wfTemplate, setWfTemplate] = useState("noop")
 
     // const [pageNo, setPageNo] = useState(1);
 
     const [isDirectoryButtonDisabled, setIsDirectoryButtonDisabled] = useState(false)
     const [isWorkflowButtonDisabled, setIsWorkflowButtonDisabled] = useState(false)
 
-    const {data, err, templates, createNode, deleteNode, renameNode } = useNodes(Config.url, true, namespace, path, localStorage.getItem("apikey"), orderFieldDictionary[orderFieldKey])
 
     const directoryValidationSchema = yup.object().shape({
         directoryName: yup.string().required()
@@ -291,7 +292,6 @@ function ExplorerList(props) {
                 <FlexBox className="gap" style={{flexDirection: "row-reverse"}}>
                     <ContentPanelHeaderButton className="explorer-action-btn">
                         <Modal title="New Workflow" 
-                            modalStyle={{height: "90vh"}}
                             escapeToCancel
                             button={(
                                 <div style={{display:"flex"}}>
@@ -303,23 +303,32 @@ function ExplorerList(props) {
                                 </div>
                             )}  
                             onClose={()=>{
-                                setWfData("")
-                                setWfTemplate("")
+                                setWfData(templates["noop"])
+                                setWfTemplate("noop")
                                 setWorkflowName("")
                             }}
                             actionButtons={[
-                                ButtonDefinition("Add",async () => {
-                                    await createNode(workflowName, "workflow", wfData)
-                                }, `small ${isWorkflowButtonDisabled ? "disabled": "blue"}`, (err)=>{return err}, true, true),
+                                ButtonDefinition("Add", async () => {
+                                    const result = await createNode(workflowName, "workflow", wfData)
+                                    if(result.node && result.namespace){
+                                        navigate(`/n/${result.namespace}/explorer/${result.node.path.substring(1)}`)
+                                    }
+                                }, `small blue ${(workflowName.trim()) ? "" : "disabled"}`, ()=>{}, true, false),
                                 ButtonDefinition("Cancel", () => {
-                                }, "small light", ()=>{}, true, true)
+                                }, "small light", ()=>{}, true, false)
+                            ]}
+
+                            keyDownActions={[
+                                KeyDownDefinition("Enter", async () => {
+                                    if(workflowName.trim()) {
+                                        await createNode(workflowName, "workflow", wfData)
+                                    } else {
+                                        throw new Error("Please fill in name")
+                                    }
+                                }, ()=>{}, true, "workflow-name")
                             ]}
                         >
-                            <FlexBox className="col gap" style={{fontSize: "12px", minHeight: "300px", minWidth: "550px"}}>
-                                <FlexBox className="gap" style={{margin: "-4px 0 -4px 0", maxHeight: 30}}>
-                                    Name
-                                    <span className="required-label">*</span>
-                                </FlexBox>
+                            <FlexBox className="col gap" style={{fontSize: "12px", minHeight: "500px", minWidth: "550px"}}>
                                 <div style={{width: "100%", paddingRight: "12px", display: "flex"}}>
                                     <input id={"workflow-name"} value={workflowName} onChange={(e)=>setWorkflowName(e.target.value)} autoFocus placeholder="Enter workflow name"/>
                                 </div>
@@ -331,7 +340,6 @@ function ExplorerList(props) {
                                     // todo set wfdata to template on change
                                     setWfData(templates[e.target.value])
                                 }}>
-                                    <option value="" >Choose a workflow template...</option>
                                     {Object.keys(templates).map((obj)=>{
                                         let key = GenerateRandomKey("")
                                         return(
@@ -469,14 +477,15 @@ function DirListItem(props) {
         <div style={{cursor:"pointer"}} onClick={(e)=>{
             navigate(`/n/${namespace}/explorer/${path.substring(1)}`)
         }} className="explorer-item">
-            <FlexBox className="explorer-item-container">
-                <FlexBox className="explorer-item-icon">
-                    <FiFolder className="auto-margin" />
-                </FlexBox>
+            <FlexBox className="col">
+                <FlexBox className="explorer-item-container gap wrap">
+                    <FlexBox className="explorer-item-icon">
+                        <FiFolder className="auto-margin" />
+                    </FlexBox>
                 {
                     rename ? 
-                    <FlexBox className="explorer-item-name">
-                        <input onClick={(ev)=>ev.stopPropagation()} type="text" value={renameValue} onKeyPress={async (e)=>{
+                    <FlexBox className="explorer-item-name" style={{alignItems: "center"}}>
+                        <input style={{ width: "100%" }} onClick={(ev)=>ev.stopPropagation()} type="text" value={renameValue} onKeyPress={async (e)=>{
                             if(e.key === "Enter"){
                                 try { 
                                     await renameNode("/", path, renameValue)
@@ -485,145 +494,48 @@ function DirListItem(props) {
                                     setErr(err.message)
                                 }
                             }
-                        }} onChange={(e)=>setRenameValue(e.target.value)} autoFocus style={{maxWidth:"300px", height:"38px"}}/>
-                        {err !== "" ? 
-                        <span>{err}</span>
-                        :""
-                        }
+                        }} onChange={(e)=>setRenameValue(e.target.value)} autoFocus style={{height:"38px"}}/>
                      </FlexBox>
                     :
                     <FlexBox className="explorer-item-name">
                         {name}
                     </FlexBox>
                 }
-                
-                <FlexBox className="explorer-item-actions gap">
-                {rename ? 
-                    <FlexBox onClick={(ev)=>{
-                        setRename(!rename)
-                        setErr("")
-                        ev.stopPropagation()
-                    }}>
-                        <VscClose className="auto-margin" />
+                <FlexBox >
+                    {err !== "" ? 
+                    <FlexBox>
+                        <Alert className="rename-error critical">{err}</Alert>
                     </FlexBox>
-                    :
-                    <FlexBox onClick={(ev)=>{
-                        setRename(!rename)
-                        setErr("")
-                        ev.stopPropagation()
-                    }}>
-                        <VscEdit className="auto-margin" />
-                    </FlexBox>}
-                    <FlexBox onClick={(ev)=>ev.stopPropagation()}>
-
-                    <Modal
-                            escapeToCancel
-                            style={{
-                                flexDirection: "row-reverse",
-                            }}
-                            title="Delete a directory" 
-                            button={(
-                                <FlexBox>
-                                    <VscTrash className="auto-margin red-text" />
-                                </FlexBox>
-                            )}
-                            actionButtons={
-                                [
-                                    ButtonDefinition("Delete", async () => {
-                                        let p = path.split('/', -1);
-                                        let pLast = p[p.length-1];
-                                        await deleteNode(pLast)
-                                    }, "small red", ()=>{}, true, false),
-                                    ButtonDefinition("Cancel", () => {
-                                    }, "small light", ()=>{}, true, false)
-                                ]
-                            } 
-                        >
-                                <FlexBox className="col gap">
-                            <FlexBox >
-                                Are you sure you want to delete '{name}'?
-                                <br/>
-                                This action cannot be undone.
-                            </FlexBox>
-                        </FlexBox>
-                    </Modal>
-                    </FlexBox>
-
-                </FlexBox>
-            </FlexBox>
-        </div>
-    )
-}
-
-function WorkflowListItem(props) {
-
-    let {name, path, deleteNode, renameNode, namespace} = props;
-
-    const navigate= useNavigate()
-    const [renameValue, setRenameValue] = useState(path)
-    const [rename, setRename] = useState(false)
-    const [err, setErr] = useState("")
-
-    return(
-        <div style={{cursor:"pointer"}} onClick={()=>{
-            navigate(`/n/${namespace}/explorer/${path.substring(1)}`)
-        }} className="explorer-item">
-            <FlexBox className="explorer-item-container">
-                <FlexBox className="explorer-item-icon">
-                    <FcWorkflow className="auto-margin" />
-                </FlexBox>
-                {
-                    rename ? 
-                    <FlexBox className="explorer-item-name">
-                        <input onClick={(ev)=>ev.stopPropagation()} type="text" value={renameValue} onKeyPress={async (e)=>{
-                            if(e.key === "Enter"){
-                                try { 
-                                    await renameNode("/", path, renameValue)
-                                    setRename(!rename)
-                                } catch(err) {
-                                    setErr(err.message)
-                                }
-                            }
-                        }} onChange={(e)=>setRenameValue(e.target.value)} autoFocus style={{maxWidth:"300px", height:"38px"}}/>
-                        {err !== "" ? 
-                        <span>{err}</span>
-                        :""
-                        }
-                     </FlexBox>
-                    :
-                    <FlexBox className="explorer-item-name">
-                        {name}
-                    </FlexBox>
-                }
-                
-                <FlexBox className="explorer-item-actions gap">
+                    :<FlexBox />
+                    }
+                    <FlexBox className="explorer-item-actions gap">
                     {rename ? 
-                    <FlexBox onClick={(ev)=>{
-                        setRename(!rename)
-                        setErr("")
-                        ev.stopPropagation()
-                    }}>
-                        <VscClose className="auto-margin" />
-                    </FlexBox>
-                    :
-                    <FlexBox onClick={(ev)=>{
-                        setRename(!rename)
-                        setErr("")
-                        ev.stopPropagation()
-                    }}>
-                        <VscEdit className="auto-margin" />
-                    </FlexBox>}
-                    <FlexBox onClick={(ev)=>ev.stopPropagation()}>
+                        <FlexBox onClick={(ev)=>{
+                            setRename(!rename)
+                            setErr("")
+                            ev.stopPropagation()
+                        }}>
+                            <VscClose className="auto-margin" />
+                        </FlexBox>
+                        :
+                        <FlexBox onClick={(ev)=>{
+                            setRename(!rename)
+                            setErr("")
+                            ev.stopPropagation()
+                        }}>
+                            <VscEdit className="auto-margin" />
+                        </FlexBox>}
+                        <FlexBox onClick={(ev)=>ev.stopPropagation()}>
 
                         <Modal
                                 escapeToCancel
                                 style={{
                                     flexDirection: "row-reverse",
                                 }}
-                                title="Delete a workflow" 
+                                title="Delete a directory" 
                                 button={(
-                                    <FlexBox style={{alignItems:'center'}}>
-                                        <HiOutlineTrash className="auto-margin red-text" />
+                                    <FlexBox>
+                                        <VscTrash className="auto-margin red-text" />
                                     </FlexBox>
                                 )}
                                 actionButtons={
@@ -645,7 +557,113 @@ function WorkflowListItem(props) {
                                     This action cannot be undone.
                                 </FlexBox>
                             </FlexBox>
-                            </Modal>
+                        </Modal>
+                        </FlexBox>
+
+                    </FlexBox>
+                </FlexBox>
+                </FlexBox>
+            </FlexBox>
+        </div>
+    )
+}
+
+function WorkflowListItem(props) {
+
+    let {name, path, deleteNode, renameNode, namespace} = props;
+
+    const navigate= useNavigate()
+    const [renameValue, setRenameValue] = useState(path)
+    const [rename, setRename] = useState(false)
+    const [err, setErr] = useState("")
+
+    return(
+        <div style={{cursor:"pointer"}} onClick={()=>{
+            navigate(`/n/${namespace}/explorer/${path.substring(1)}`)
+        }} className="explorer-item">
+            <FlexBox className="col">
+                <FlexBox className="explorer-item-container gap wrap">
+                    <FlexBox className="explorer-item-icon">
+                        <FcWorkflow className="auto-margin" />
+                    </FlexBox>
+                {
+                    rename ? 
+                    <FlexBox className="explorer-item-name" style={{alignItems: "center", maxWidth: "300px", minWidth: "300px"}}>
+                        <input onClick={(ev)=>ev.stopPropagation()} type="text" value={renameValue} onKeyPress={async (e)=>{
+                            if(e.key === "Enter"){
+                                try { 
+                                    await renameNode("/", path, renameValue)
+                                    setRename(!rename)
+                                } catch(err) {
+                                    setErr(err.message)
+                                }
+                            }
+                        }} onChange={(e)=>setRenameValue(e.target.value)} autoFocus style={{maxWidth:"300px", height:"38px"}}/>
+                     </FlexBox>
+                    :
+                    <FlexBox className="explorer-item-name">
+                        {name}
+                    </FlexBox>
+                }
+                    <FlexBox>
+                        {err !== "" ? 
+                        <FlexBox>
+                            <Alert className="rename-error critical">{err}</Alert>
+                        </FlexBox>
+                        :<FlexBox />
+                        }
+                        <FlexBox className="explorer-item-actions gap">
+                            {rename ? 
+                            <FlexBox onClick={(ev)=>{
+                                setRename(!rename)
+                                setErr("")
+                                ev.stopPropagation()
+                            }}>
+                                <VscClose className="auto-margin" />
+                            </FlexBox>
+                            :
+                            <FlexBox onClick={(ev)=>{
+                                setRename(!rename)
+                                setErr("")
+                                ev.stopPropagation()
+                            }}>
+                                <VscEdit className="auto-margin" />
+                            </FlexBox>}
+                            <FlexBox onClick={(ev)=>ev.stopPropagation()}>
+
+                                <Modal
+                                        escapeToCancel
+                                        style={{
+                                            flexDirection: "row-reverse",
+                                        }}
+                                        title="Delete a workflow" 
+                                        button={(
+                                            <FlexBox style={{alignItems:'center'}}>
+                                                <HiOutlineTrash className="auto-margin red-text" />
+                                            </FlexBox>
+                                        )}
+                                        actionButtons={
+                                            [
+                                                ButtonDefinition("Delete", async () => {
+                                                    let p = path.split('/', -1);
+                                                    let pLast = p[p.length-1];
+                                                    await deleteNode(pLast)
+                                                }, "small red", ()=>{}, true, false),
+                                                ButtonDefinition("Cancel", () => {
+                                                }, "small light", ()=>{}, true, false)
+                                            ]
+                                        } 
+                                    >
+                                            <FlexBox className="col gap">
+                                        <FlexBox >
+                                            Are you sure you want to delete '{name}'?
+                                            <br/>
+                                            This action cannot be undone.
+                                        </FlexBox>
+                                    </FlexBox>
+                                    </Modal>
+                        </FlexBox>
+                    </FlexBox>
                 </FlexBox>
                 </FlexBox>
             </FlexBox>
