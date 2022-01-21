@@ -35,6 +35,7 @@ import HelpIcon from "../../../components/help";
 import Loader from '../../../components/loader';
 import Alert from '../../../components/alert';
 import {AutoSizer} from "react-virtualized";
+import usePrompt from '../../../components/blocker';
 
 dayjs.extend(utc)
 dayjs.extend(relativeTime);
@@ -327,6 +328,15 @@ function WorkingRevision(props) {
             })
         }
     }
+
+    const isDirty = () => {
+        return workflow !== oldWf
+    } 
+    console.log(isDirty())
+    usePrompt(
+        "Are you sure you want to leave with unsaved changes?",
+        isDirty()
+    )
 
     return(
         <FlexBox style={{width:"100%"}}>
