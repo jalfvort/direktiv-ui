@@ -9,9 +9,197 @@ import FlexBox from '../../components/flexbox';
 import HelpIcon from '../../components/help';
 import { Config } from '../../util';
 import './style.css';
+import Drawflow from 'drawflow';
+import { Resizable } from 're-resizable';
+import styleDrawflow from 'drawflow/dist/drawflow.min.css'
+import YAML from "json-to-pretty-yaml"
+import { ContextMenu, MenuItem, ContextMenuTrigger } from "react-contextmenu";
 
+import { SchemaMap } from "./jsonSchema"
+import Form from '@rjsf/core';
+import { onSubmitCallbackMap, setConnections } from './util';
 
 export default function JQPlayground() {
+    const [diagramEditor, setDiagramEditor] = useState(null);
+    const [selectedNode, setSelectedNode] = useState(0);
+    const [formRef, setFormRef] = useState(null);
+
+    const [actionDrawerWidth, setActionDrawerWidth] = useState(0)
+    const [actionDrawerMinWidth, setActionDrawerMinWidth] = useState(0)
+
+    useEffect(() => {
+        var id = document.getElementById("drawflow");
+        console.log("id = ", id)
+        if (!diagramEditor) {
+            let editor = new Drawflow(id)
+            editor.start()
+            editor.on('nodeSelected', function (id) {
+                setSelectedNode(id)
+                let node = editor.getNodeFromId(id)
+                console.log("XXX Node data =  ", node)
+            })
+
+            editor.on('nodeCreated', function (id) {
+                let newNode = editor.getNodeFromId(id)
+                newNode.data.id = `node-${id}-${newNode.data.type}`
+                editor.updateNodeDataFromId(id, newNode.data)
+            })
+
+
+            editor.addNode('StateNoop', 1, 1, 100, 100, "node primitive", { family: "primitive", type: "noop", schemaKey: 'stateSchemaNoop', formData: {} }, 'Noop State', false);
+            editor.addNode('StateAction', 1, 1, 250, 200, "node primitive", { family: "primitive", type: "action", schemaKey: 'stateSchemaAction', formData: {} }, 'Action State', false);
+            editor.addNode('StateSwitch', 1, 1, 350, 300, "node primitive", { family: "primitive", type: "switch", schemaKey: 'stateSchemaSwitch', formData: {} }, 'Switch State', false);
+            editor.addNode('StartBlock', 0, 1, 1, 200, "node primitive", { family: "primitive", type: "start", schemaKey: 'stateSchemaSwitch', formData: {} }, 'Start Block', false);
+
+            setDiagramEditor(editor)
+        }
+    }, [diagramEditor])
+
+    const resizeStyle = {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        flexDirection: "column",
+        background: "#f0f0f0",
+        zIndex: 30,
+    };
+
+    return (
+        <>
+            <FlexBox id="builder-page" className="col gap" style={{ paddingRight: "8px" }}>
+                {/* <div style={{height:"600px", width: "600px"}}> */}
+                <div className='toolbar'>
+                    <div className='btn' onClick={() => {
+                        //TODO: Split into another function
+                        //TODO: Export to non-destructive json ✓
+                        let rawExport = diagramEditor.export()
+                        let rawData = rawExport.drawflow.Home.data
+                        let wfData = { states: [] }
+                        //TODO: 
+                        // - Find Start Block ✓
+                        // - Check if there are multiple start blocks
+                        const startBlockIDs = diagramEditor.getNodesFromName("StartBlock")
+                        console.log("startBlockIDs = ", startBlockIDs)
+                        let startBlock = rawData[startBlockIDs[0]];
+                        let startState
+
+                        // Find Start State
+                        for (const outputID in startBlock.outputs) {
+                            if (Object.hasOwnProperty.call(startBlock.outputs, outputID)) {
+                                const output = startBlock.outputs[outputID];
+                                console.log("--> Found output = ", output)
+                                // TODO: handle to connections in start
+                                startState = rawData[output.connections[0].node]
+                                console.log("--> Found startState = ", startState)
+                                break
+                            }
+                        }
+
+                        // Set Transitions
+                        console.log(" rawData = ", rawData)
+                        setConnections(startState.id, startBlock.id, rawData, wfData)
+                        wfData.states.reverse()
+
+                        console.log("wfData = ", wfData)
+                        console.log("---- Workflow ---")
+                        console.log(YAML.stringify(wfData))
+
+                    }}>
+                        <div>Export</div>
+                    </div>
+                    <div className='btn' onClick={() => {
+                        setActionDrawerMinWidth(0)
+                        setActionDrawerWidth(0)
+                    }}>
+                        <div>Export</div>
+                    </div>
+
+                    <div className='btn' onClick={() => {
+                        setActionDrawerMinWidth(20)
+                        setActionDrawerWidth(200)
+                        console.log(JSON.stringify(SchemaMap[diagramEditor.getNodeFromId(selectedNode).data.schemaKey]))
+                    }}>
+                        <div>Export</div>
+                    </div>
+                </div>
+                <FlexBox style={{ margin: "5px", borderRadius: "16px", overflow: "hidden", boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px" }}>
+                    <div
+                        style={{
+                            width: '100%',
+                            display: 'flex',
+                            overflow: 'hidden',
+                        }}
+                    >
+                        <Resizable
+                            style={{ ...resizeStyle, pointerEvents: actionDrawerWidth === 0 ? "none" : "", opacity: actionDrawerWidth === 0 ? 0 : 100 }}
+                            size={{ width: actionDrawerWidth, height: "100%" }}
+                            onResizeStop={(e, direction, ref, d) => {
+                                setActionDrawerWidth(actionDrawerWidth + d.width)
+                            }}
+                            maxWidth="25%"
+                            minWidth={actionDrawerMinWidth}
+                        >
+                            <div className={"panel left"}>
+                            </div>
+                        </Resizable>
+                        <div id="drawflow" style={{ height: "100%", width: "100%" }} >
+                        </div>
+                        <Resizable
+                            style={resizeStyle}
+                            defaultSize={{
+                                width: '20%',
+                                height: "100%",
+                            }}
+                            maxWidth="30%"
+                            minWidth="1"
+                        >
+                            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", borderBottom: "1px solid #e5e5e5", paddingBottom: "6px", borderLeft:"7px solid rgb(131, 131, 131)", width:"100%" }}>
+                                <h2 style={{ margin: "6px", textAlign: "center" }}>
+                                    Switch State
+                                </h2>
+                                <div className='btn' style={{ backgroundColor: "pink", cursor: "pointer", paddingTop: "0px", paddingBottom: "0px" }} onClick={() => {
+                                    formRef.click()
+                                }}>
+                                    Submit
+                                </div>
+                            </div>
+                            <div className={"panel right"} style={{ flexDirection: "column" }}>
+                                <div style={{ minHeight: "200px", maxHeight: "100%", height: "0px" }}>
+                                    <Form
+                                        id={"builder-form"}
+                                        onSubmit={(form) => {
+                                            console.log("form.formData = ", form.formData)
+
+                                            // Update form data into node
+                                            let node = diagramEditor.getNodeFromId(selectedNode)
+                                            node.data.formData = form.formData
+                                            console.log("!!!node!#@!$!@$@! = ", node)
+                                            diagramEditor.updateNodeDataFromId(selectedNode, node.data)
+
+                                            // Do Custom callback logic if it exists for data type
+                                            let onSubmitCallback = onSubmitCallbackMap[node.name]
+                                            if (onSubmitCallback) {
+                                                onSubmitCallback(node, diagramEditor)
+                                                return
+                                            }
+                                        }}
+                                        schema={selectedNode !== 0 ? SchemaMap[diagramEditor.getNodeFromId(selectedNode).data.schemaKey] : {}}
+                                        formData={selectedNode !== 0 ? diagramEditor.getNodeFromId(selectedNode).data.formData : {}}
+                                    >
+                                        <button ref={setFormRef} style={{ display: "none" }} />
+                                    </Form>
+                                </div>
+                            </div>
+                        </Resizable>
+                    </div>
+                </FlexBox>
+                {/* </div> */}
+            </FlexBox>
+        </>
+    )
+}
+
+export function BackupJQPlayground() {
 
     const [filter, setFilter] = useState(localStorage.getItem('jqFilter') ? localStorage.getItem('jqFilter') : ".")
     const [input, setInput] = useState(localStorage.getItem('jqInput') ? localStorage.getItem('jqInput') : JSON.stringify({}, null, 2))

@@ -91,7 +91,7 @@ function RevisionTab(props) {
                                 <FlexBox >
                                     <DirektivEditor style={{borderRadius: "0px"}} value={workflow} readonly={true} disableBottomRadius={true} dlang="yaml" />
                                 </FlexBox>
-                                <FlexBox className="gap" style={{backgroundColor:"#223848", color:"white", height:"44px", maxHeight:"44px", paddingLeft:"10px", minHeight:"44px", borderTop:"1px solid white", alignItems:'center', borderRadius:"0px 0px 8px 8px", overflow: "hidden"}}>
+                                <FlexBox className="gap editor-footer" style={{borderTop:"1px solid white", overflow: "hidden"}}>
                                     <div style={{display:"flex", flex:1 }}>
                                     </div>
                                     <div style={{display:"flex", flex:1, justifyContent:"center"}}>
