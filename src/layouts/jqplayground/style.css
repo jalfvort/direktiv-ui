@@ -1,5 +1,6 @@
 :root {
     --primitive-accent: 210, 100%;
+    --special-accent: 139, 64%;
 }
 
 .jq-example{
@@ -90,6 +91,7 @@
     width: 100%;
     height: 100%;
     overflow: auto;
+    background-color: #7fe4e4;
 }
 
 #builder-page .panel.left {
@@ -113,6 +115,12 @@
     border: 1px solid hsl(var(--primitive-accent), 70%);
     box-shadow: 1.21446px 1.21446px 3.64339px hsla(var(--primitive-accent), 90%, 1.24);
     background-color: hsl(var(--primitive-accent), 90%);
+}
+
+#builder-page .node.special {
+    border: 1px solid hsl(var(--special-accent), 70%);
+    box-shadow: 1.21446px 1.21446px 3.64339px hsla(var(--special-accent), 90%, 1.24);
+    background-color: hsl(var(--special-accent), 90%);
 }
 
 #builder-page .drawflow_content_node {
@@ -210,3 +218,23 @@
 #builder-page .node .outputs div::after {
     content: "▲";
 } */
+
+
+/* Actions Bar */
+
+#builder-page .action {
+    width: 100%;
+    margin: 6px;
+    border-radius: 2.42892px;
+}
+#builder-page .action.primitive {
+    border: 1px solid hsl(var(--primitive-accent), 70%);
+    box-shadow: 1.21446px 1.21446px 3.64339px hsla(var(--primitive-accent), 90%, 1.24);
+    background-color: hsl(var(--primitive-accent), 90%);
+}
+
+#builder-page .action.special {
+    border: 1px solid hsl(var(--special-accent), 70%);
+    box-shadow: 1.21446px 1.21446px 3.64339px hsla(var(--special-accent), 90%, 1.24);
+    background-color: hsl(var(--special-accent), 90%);
+}
