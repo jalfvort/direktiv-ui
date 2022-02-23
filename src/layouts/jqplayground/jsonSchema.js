@@ -106,6 +106,90 @@ const CommonSchemaDefinitionAction = {
 //     ]
 //   }
   
+// export const CommonSchemaDefinitionStateFields = {
+//     "transform": {
+//         "title": "Transform",
+//         "description": "jq command to transform the state's data output.",
+//         "type": "object",
+//         "properties": {
+//             "street_address": {
+//               "type": "string"
+//             },
+//             "country": {
+//               "default": "United States of America",
+//               "enum": ["United States of America", "Canada", "Netherlands"]
+//             }
+//           },
+//           "allOf": [
+//             {
+//               "if": {
+//                 "properties": { "country": { "const": "United States of America" } }
+//               },
+//               "then": {
+//                 "properties": { "postal_code": { "pattern": "[0-9]{5}(-[0-9]{4})?" } }
+//               }
+//             },
+//             {
+//               "if": {
+//                 "properties": { "country": { "const": "Canada" } },
+//                 "required": ["country"]
+//               },
+//               "then": {
+//                 "properties": { "postal_code": { "pattern": "[A-Z][0-9][A-Z] [0-9][A-Z][0-9]" } }
+//               }
+//             },
+//             {
+//               "if": {
+//                 "properties": { "country": { "const": "Netherlands" } },
+//                 "required": ["country"]
+//               },
+//               "then": {
+//                 "properties": { "postal_code": { "pattern": "[0-9]{4} [A-Z]{2}" } }
+//               }
+//             }
+//           ]
+//     },
+//     "log": {
+//         "type": "string",
+//         "title": "Log",
+//         "description": "jq command to generate data for instance-logging."
+//     }
+// }
+
+// export const CommonSchemaDefinitionStateFields = {
+//     "transform": {
+//         "title": "Transform",
+//         "description": "jq command to transform the state's data output.",
+//         "type": "object",
+//         "oneOf": [{
+//                 "properties": {
+//                     "jqQuery": {
+//                         "type": "string"
+//                     }
+//                 }
+//             },
+//             {
+//                 "properties": {
+//                     "keyValueZ": {
+//                         "type": "object",
+//                         "title": "Key Value",
+//                         "description": "Key Value Transform",
+//                         "properties": {},
+//                         "additionalProperties": {
+//                             "type": "string"
+//                         }
+//                     }
+//                 }
+//             }
+//         ]
+//     },
+//     "log": {
+//         "type": "string",
+//         "title": "Log",
+//         "description": "jq command to generate data for instance-logging."
+//     }
+// }
+
 export const CommonSchemaDefinitionStateFields = {
     "transform": {
         "title": "Transform",
@@ -124,10 +208,9 @@ export const CommonSchemaDefinitionStateFields = {
             {
                 "if": {
                     "properties": {
-                        "transform":{
                         "selectionType": {
                             "const": "jq"
-                        }}
+                        }
                     }
                 },
                 "then": {
@@ -144,11 +227,9 @@ export const CommonSchemaDefinitionStateFields = {
             {
                 "if": {
                     "properties": {
-                        "transform":{
                         "selectionType": {
                             "const": "keyValue"
                         }
-                    }
                     }
                 },
                 "then": {
@@ -191,6 +272,7 @@ export const CommonSchemaDefinitionStateFields = {
         "description": "jq command to generate data for instance-logging."
     }
 }
+
 
 // States
 

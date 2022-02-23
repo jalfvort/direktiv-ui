@@ -151,6 +151,7 @@ export default function JQPlayground() {
     const [selectedNode, setSelectedNode] = useState(0);
     const [formRef, setFormRef] = useState(null);
     const [error, setError] = useState(null)
+    const [mouseDown, setMouseDown] = useState(false)
 
     const [actionDrawerWidth, setActionDrawerWidth] = useState(0)
     const [actionDrawerWidthOld, setActionDrawerWidthOld] = useState(200)
@@ -188,6 +189,16 @@ export default function JQPlayground() {
                 console.log("nodeUnselected event = ", e);
             })
 
+            editor.on('click', function (e) {
+                console.log("user click event = ", e);
+                setMouseDown(true);
+            })
+
+            editor.on('mouseUp', function (e) {
+                console.log("user mouseUp event = ", e);
+                setMouseDown(false);
+            })
+
 
             editor.addNode('StateNoop', 1, 1, 100, 100, "node primitive", { family: "primitive", type: "noop", schemaKey: 'stateSchemaNoop', formData: {} }, 'Noop State', false);
             editor.addNode('StateAction', 1, 1, 250, 200, "node primitive", { family: "primitive", type: "action", schemaKey: 'stateSchemaAction', formData: {} }, 'Action State', false);
@@ -218,17 +229,46 @@ export default function JQPlayground() {
         zIndex: 30,
     };
 
+
+
+const resizeStyleForm = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    flexDirection: "column",
+    background: "#f0f0f0",
+    zIndex: 30,
+    position: "absolute",
+    top: "0px",
+    bottom: "0px",
+    right: "0px",
+};
+
+function formDrawerVisibility(width, mouseIsDown) {
+    if (width === 0) {
+        return {pointerEvents: "none", opacity: 0}
+    }
+    if (mouseIsDown) {
+        return {pointerEvents: "none", opacity: 0.5, transition: "opacity cubic-bezier(1,-0.00,.09,.59) 0.3s"}
+    }
+
+    return {}
+}
+
+
+
     return (
         <>
             <FlexBox id="builder-page" className="col gap" style={{ paddingRight: "8px" }}>
                 {error ?
-                    <Alert className="critical">{error} </Alert>
+                    <Alert className="critical" style={{flex:"0"}}>{error} </Alert>
                     :
                     <></>
                 }
                 {/* <div style={{height:"600px", width: "600px"}}> */}
                 <div className='toolbar'>
                     <div className='btn' onClick={() => {
+                         setError(null)
                         //TODO: Split into another function
                         //TODO: Export to non-destructive json ✓
                         let rawExport = diagramEditor.export()
@@ -249,6 +289,10 @@ export default function JQPlayground() {
                                 console.log("--> Found output = ", output)
                                 // TODO: handle to connections in start
                                 console.log("output.connections = ", output.connections)
+                                if ( output.connections.length === 0) {
+                                    setError("Start Node is not connected to any node")
+                                    return
+                                }
                                 startState = rawData[output.connections[0].node]
                                 console.log("--> Found startState = ", startState)
                                 break
@@ -300,6 +344,9 @@ export default function JQPlayground() {
                     }}>
                         <div>Auto Show Details</div>
                     </div>
+                    <div>
+                        CURRENTLY SELECTED NODE: {selectedNode}
+                    </div>
                 </div>
                 <FlexBox style={{ margin: "5px", borderRadius: "16px", overflow: "hidden", boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px" }}>
                     <div
@@ -307,6 +354,7 @@ export default function JQPlayground() {
                             width: '100%',
                             display: 'flex',
                             overflow: 'hidden',
+                            position: "relative"
                         }}
                     >
                         <Resizable
@@ -349,7 +397,7 @@ export default function JQPlayground() {
                         >
                         </div>
                         <Resizable
-                            style={{ ...resizeStyle, pointerEvents: formDrawerWidth === 0 ? "none" : "", opacity: formDrawerWidth === 0 ? 0 : 100 }}
+                            style={{ ...resizeStyleForm, ...formDrawerVisibility(formDrawerWidth, mouseDown)}}
                             onResizeStop={(e, direction, ref, d) => {
                                 setFormDrawerWidthOld(formDrawerWidthOld + d.width)
                                 setFormDrawerWidth(formDrawerWidth + d.width)

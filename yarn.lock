@@ -1088,6 +1088,14 @@
     "@babel/helper-plugin-utils" "^7.10.4"
     "@babel/plugin-transform-typescript" "^7.12.1"
 
+"@babel/runtime-corejs2@^7.4.5":
+  version "7.17.2"
+  resolved "https://registry.yarnpkg.com/@babel/runtime-corejs2/-/runtime-corejs2-7.17.2.tgz#4d7dbc218e958ce48df6250faa73616e8495bc1a"
+  integrity sha512-EamjJvKlHTdSmJ8t6yHtqttdiA3xThvTNdmGb0Kh0oqRhV1SU2JGFU5TjVCg35Vnn8MYfUBHHtLZYHIY+W28qw==
+  dependencies:
+    core-js "^2.6.5"
+    regenerator-runtime "^0.13.4"
+
 "@babel/runtime-corejs3@^7.10.2":
   version "7.12.18"
   resolved "https://registry.npmjs.org/@babel/runtime-corejs3/-/runtime-corejs3-7.12.18.tgz"
@@ -2177,10 +2185,10 @@
     prop-types "^15.7.2"
     tslib "^2.1.0"
 
-"@rjsf/core@^3.2.1":
-  version "3.2.1"
-  resolved "https://registry.yarnpkg.com/@rjsf/core/-/core-3.2.1.tgz#8a7b24c9a6f01f0ecb093fdfc777172c12b1b009"
-  integrity sha512-dk8ihvxFbcuIwU7G+HiJbFgwyIvaumPt5g5zfnuC26mwTUPlaDGFXKK2yITp8tJ3+hcwS5zEXtAN9wUkfuM4jA==
+"@rjsf/core@^4.0.1":
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/@rjsf/core/-/core-4.0.1.tgz#3363aadbaf40f7086f8669c4a645ed0cddd6c2da"
+  integrity sha512-3HZ5Udy/Yvtixjn/dOcVm4IBoF/HM/LmUAPZt98elSAISga3vhzGc3zv7Fi3IbDNrvL6ZdJbfIj+BtR0q4Rnrg==
   dependencies:
     "@types/json-schema" "^7.0.7"
     ajv "^6.7.0"
@@ -4625,7 +4633,7 @@ core-js-pure@^3.6.5:
   resolved "https://registry.yarnpkg.com/core-js-pure/-/core-js-pure-3.21.0.tgz#819adc8dfb808205ce25b51d50591becd615db7e"
   integrity sha512-VaJUunCZLnxuDbo1rNOzwbet9E1K9joiXS5+DQMPtgxd24wfsZbJZMMfQLGYMlCUvSxLfsRUUhoOR2x28mFfeg==
 
-core-js@^2.4.0:
+core-js@^2.4.0, core-js@^2.5.7, core-js@^2.6.5:
   version "2.6.12"
   resolved "https://registry.npmjs.org/core-js/-/core-js-2.6.12.tgz"
   integrity sha512-Kb2wC0fvsWfQrgk8HU5lW6U/Lcs8+9aaYcy4ZFc6DDlo4nZ7n70dEgE5rtR0oG6ufKDUnrwfWL1mXR5ljDatrQ==
@@ -8996,6 +9004,11 @@ nan@^2.12.1:
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.15.0.tgz#3f34a473ff18e15c1b5626b62903b5ad6e665fee"
   integrity sha512-8ZtvEnA2c5aYCZYd1cvgdnU6cqwixRoYg70xPLWUws5ORTa/lnw+u4amixRS/Ac5U5mQVgp9pnlSUnbNWFaWZQ==
 
+nanoid@^2.1.0:
+  version "2.1.11"
+  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-2.1.11.tgz#ec24b8a758d591561531b4176a01e3ab4f0f0280"
+  integrity sha512-s/snB+WGm6uwi0WjsZdaVcuf3KJXlfGl2LcxgwkEwJF0D/BWzVWAZW/XY4bFaiR7s0Jk3FPvlnepg1H1b1UwlA==
+
 nanoid@^3.1.23:
   version "3.3.0"
   resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.0.tgz#5906f776fd886c66c24f3653e0c46fcb1d4ad6b0"
@@ -10503,6 +10516,15 @@ prompts@2.4.0, prompts@^2.0.1:
     kleur "^3.0.3"
     sisteransi "^1.0.5"
 
+prop-types@^15.5.8, prop-types@^15.6.2:
+  version "15.8.1"
+  resolved "https://registry.npmjs.org/prop-types/-/prop-types-15.8.1.tgz"
+  integrity sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==
+  dependencies:
+    loose-envify "^1.4.0"
+    object-assign "^4.1.1"
+    react-is "^16.13.1"
+
 prop-types@^15.6.0, prop-types@^15.7.2:
   version "15.7.2"
   resolved "https://registry.npmjs.org/prop-types/-/prop-types-15.7.2.tgz"
@@ -10511,15 +10533,6 @@ prop-types@^15.6.0, prop-types@^15.7.2:
     loose-envify "^1.4.0"
     object-assign "^4.1.1"
     react-is "^16.8.1"
-
-prop-types@^15.6.2:
-  version "15.8.1"
-  resolved "https://registry.npmjs.org/prop-types/-/prop-types-15.8.1.tgz"
-  integrity sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==
-  dependencies:
-    loose-envify "^1.4.0"
-    object-assign "^4.1.1"
-    react-is "^16.13.1"
 
 proxy-addr@~2.0.5:
   version "2.0.6"
@@ -10874,7 +10887,7 @@ react-identicons@^1.2.5:
   resolved "https://registry.npmjs.org/react-identicons/-/react-identicons-1.2.5.tgz"
   integrity sha512-x7prkDoc2pD7wSl2C1pGxS+XAoSdq1ABWJWTBUimVTDVJArKOLd0B4wRUJpDm4r+9y7pgf8ylyPGsmlWSV5n2g==
 
-react-is@^16.12.0, react-is@^16.13.1, react-is@^16.7.0, react-is@^16.8.1, react-is@^16.9.0:
+react-is@^16.12.0, react-is@^16.13.1, react-is@^16.7.0, react-is@^16.8.1, react-is@^16.8.4, react-is@^16.9.0:
   version "16.13.1"
   resolved "https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
@@ -10888,6 +10901,20 @@ react-is@^17.0.2:
   version "17.0.2"
   resolved "https://registry.npmjs.org/react-is/-/react-is-17.0.2.tgz"
   integrity sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==
+
+react-jsonschema-form@^1.8.1:
+  version "1.8.1"
+  resolved "https://registry.yarnpkg.com/react-jsonschema-form/-/react-jsonschema-form-1.8.1.tgz#9c962f29a55b3fe071d8edf2fc3430f05f1b7ed9"
+  integrity sha512-aaDloxNAcGXOOOcdKOxxqEEn5oDlPUZgWcs8unXXB9vjBRgCF8rCm/wVSv1u2G5ih0j/BX6Ewd/WjI2g00lPdg==
+  dependencies:
+    "@babel/runtime-corejs2" "^7.4.5"
+    ajv "^6.7.0"
+    core-js "^2.5.7"
+    lodash "^4.17.15"
+    prop-types "^15.5.8"
+    react-is "^16.8.4"
+    react-lifecycles-compat "^3.0.4"
+    shortid "^2.2.14"
 
 react-lifecycles-compat@^3.0.4:
   version "3.0.4"
@@ -11832,6 +11859,13 @@ shellwords@^0.1.1:
   version "0.1.1"
   resolved "https://registry.npmjs.org/shellwords/-/shellwords-0.1.1.tgz"
   integrity sha512-vFwSUfQvqybiICwZY5+DAWIPLKsWO31Q91JSKl3UYv+K5c2QRPzn0qzec6QPu1Qc9eHYItiP3NdJqNVqetYAww==
+
+shortid@^2.2.14:
+  version "2.2.16"
+  resolved "https://registry.yarnpkg.com/shortid/-/shortid-2.2.16.tgz#b742b8f0cb96406fd391c76bfc18a67a57fe5608"
+  integrity sha512-Ugt+GIZqvGXCIItnsL+lvFJOiN7RYqlGy7QE41O3YC1xbNSeDGIRO7xg2JJXIAj1cAGnOeC1r7/T9pgrtQbv4g==
+  dependencies:
+    nanoid "^2.1.0"
 
 side-channel@^1.0.4:
   version "1.0.4"
