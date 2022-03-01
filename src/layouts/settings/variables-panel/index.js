@@ -79,9 +79,6 @@ function VariablesPanel(props){
                                     if(keyValue.trim() === "") {
                                         throw new Error("Variable key name needs to be provided.")
                                     }
-                                    if(dValue.trim() === "") {
-                                        throw new Error("Variable value needs to be provided.")
-                                    }
                                     if (mimeType === "") {
                                         throw new Error("Variable mimetype needs to be provided.")
                                     }
@@ -317,7 +314,7 @@ function Variable(props) {
                         </FlexBox>
                     </FlexBox>
                 </Modal>:
-                "Cannot show filesize greater than 2.5MiB"
+                <div style={{textAlign:"center"}}>Cannot show filesize greater than 2.5MiB</div>
                 }
         </td>
         <td style={{ width: "80px", maxWidth: "80px", textAlign: "center" }}>{fileSize(obj.node.size)}</td>
@@ -330,10 +327,10 @@ function Variable(props) {
 
                         const variableData = await getNamespaceVariableBuffer(obj.node.name)
                         const extension = MimeTypeFileExtension(variableData.contentType)
-                        const bitArray = btoa(String.fromCharCode.apply(null, new Uint8Array(variableData.data)))
+                        let buf = Buffer.from(variableData.data, 'base64')
 
                         const a = document.createElement('a')
-                        a.href = `data:${variableData.contentType};base64,` + bitArray
+                        a.href = `data:${variableData.contentType};base64,` + buf.toString('base64')
                         a.download = obj.node.name + `${extension ? `.${extension}`: ""}`
                         a.click()
 

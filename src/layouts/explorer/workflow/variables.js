@@ -270,7 +270,7 @@ function Variable(props) {
                             </FlexBox>
                         </FlexBox>
                     </FlexBox>
-                </Modal>:<div>"Cannot show filesize greater than 2.5MiB"</div>}
+                </Modal>:<div style={{textAlign:"center"}}>Cannot show filesize greater than 2.5MiB</div>}
         </td>
         <td style={{ width: "80px", maxWidth: "80px", textAlign: "center" }}>{fileSize(obj.node.size)}</td>
         <td style={{ width: "120px", maxWidth: "120px", paddingLeft: "12px" }}> 
@@ -283,10 +283,10 @@ function Variable(props) {
 
                         const variableData = await getWorkflowVariableBuffer(obj.node.name)
                         const extension = MimeTypeFileExtension(variableData.contentType)
-                        const bitArray = btoa(String.fromCharCode.apply(null, new Uint8Array(variableData.data)))
+                        let buf = Buffer.from(variableData.data, 'base64')
 
                         const a = document.createElement('a')
-                        a.href = `data:${variableData.contentType};base64,` + bitArray
+                        a.href = `data:${variableData.contentType};base64,` + buf.toString('base64')
                         a.download = obj.node.name + `${extension ? `.${extension}`: ""}`
                         a.click()
                         setDownloading(false)
