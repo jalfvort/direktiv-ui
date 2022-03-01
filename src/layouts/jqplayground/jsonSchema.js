@@ -1,4 +1,112 @@
 // COMMON
+
+const CommonSchemaDefinitionConsumeEvent = {
+    "type": "object",
+    "title": "Event Definition",
+    "description": "Event to consume.",
+    "properties": {
+        "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "CloudEvent type."
+        },
+        "context": {
+            "type": "object",
+            "title": "Context",
+            "description": "Key value pairs for CloudEvent context values that must match.",
+            "additionalProperties": {
+                "type": "string"
+            },
+        }
+    }
+}
+
+const CommonSchemaDefinitionTimeout = {
+    "type": "string",
+    "title": "Timeout",
+    "description": "Duration to wait for action to complete (ISO8601)."
+}
+
+export const CommonSchemaDefinitionStateFields = {
+    "transform": {
+        "title": "Transform",
+        "description": "jq command to transform the state's data output.",
+        "type": "object",
+        "properties": {
+            "selectionType": {
+                "enum": [
+                    "JQ Query",
+                    "Key Value",
+                    "YAML"
+                ],
+                "default": "JQ Query"
+            }
+        },
+        "allOf": [
+            {
+                "if": {
+                    "properties": {
+                        "selectionType": {
+                            "const": "JQ Query"
+                        }
+                    }
+                },
+                "then": {
+                    "properties": {
+                        "jqQuery": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            {
+                "if": {
+                    "properties": {
+                        "selectionType": {
+                            "const": "YAML"
+                        }
+                    }
+                },
+                "then": {
+                    "properties": {
+                        "rawYAML": {
+                            "title":"YAML",
+                            "type": "string",
+                            "description": "Raw YAML object representation of data.",
+                        }
+                    }
+                }
+            },
+            {
+                "if": {
+                    "properties": {
+                        "selectionType": {
+                            "const": "Key Value"
+                        }
+                    }
+                },
+                "then": {
+                    "properties": {
+                        "keyValue": {
+                            "type": "object",
+                            "title": "Key Value",
+                            "description": "Key Values representation of data.",
+                            "additionalProperties": {
+                                "type": "string"
+                            },
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "log": {
+        "type": "string",
+        "title": "Log",
+        "description": "jq command to generate data for instance-logging."
+    }
+}
+
 const CommonSchemaDefinitionAction = {
     "type": "object",
     "title": "Action Definition",
@@ -17,7 +125,7 @@ const CommonSchemaDefinitionAction = {
             ]
         },
         "input": {
-            "type": "string",
+            ...CommonSchemaDefinitionStateFields.transform,
             "title": "Input",
             "description": "jq command to generate the input for the action."
         },
@@ -32,248 +140,6 @@ const CommonSchemaDefinitionAction = {
     }
 }
 
-// {
-//     "type": "object",
-//     "properties": {
-//       "animal": {
-//         "enum": [
-//           "Cat",
-//           "Fish"
-//         ]
-//       }
-//     },
-//     "allOf": [
-//       {
-//         "if": {
-//           "properties": {
-//             "animal": {
-//               "const": "Cat"
-//             }
-//           }
-//         },
-//         "then": {
-//           "properties": {
-//             "food": {
-//               "type": "string",
-//               "enum": [
-//                 "meat",
-//                 "grass",
-//                 "fish"
-//               ]
-//             }
-//           },
-//           "required": [
-//             "food"
-//           ]
-//         }
-//       },
-//       {
-//         "if": {
-//           "properties": {
-//             "animal": {
-//               "const": "Fish"
-//             }
-//           }
-//         },
-//         "then": {
-//           "properties": {
-//             "food": {
-//               "type": "string",
-//               "enum": [
-//                 "insect",
-//                 "worms"
-//               ]
-//             },
-//             "water": {
-//               "type": "string",
-//               "enum": [
-//                 "lake",
-//                 "sea"
-//               ]
-//             }
-//           },
-//           "required": [
-//             "food",
-//             "water"
-//           ]
-//         }
-//       },
-//       {
-//         "required": [
-//           "animal"
-//         ]
-//       }
-//     ]
-//   }
-  
-// export const CommonSchemaDefinitionStateFields = {
-//     "transform": {
-//         "title": "Transform",
-//         "description": "jq command to transform the state's data output.",
-//         "type": "object",
-//         "properties": {
-//             "street_address": {
-//               "type": "string"
-//             },
-//             "country": {
-//               "default": "United States of America",
-//               "enum": ["United States of America", "Canada", "Netherlands"]
-//             }
-//           },
-//           "allOf": [
-//             {
-//               "if": {
-//                 "properties": { "country": { "const": "United States of America" } }
-//               },
-//               "then": {
-//                 "properties": { "postal_code": { "pattern": "[0-9]{5}(-[0-9]{4})?" } }
-//               }
-//             },
-//             {
-//               "if": {
-//                 "properties": { "country": { "const": "Canada" } },
-//                 "required": ["country"]
-//               },
-//               "then": {
-//                 "properties": { "postal_code": { "pattern": "[A-Z][0-9][A-Z] [0-9][A-Z][0-9]" } }
-//               }
-//             },
-//             {
-//               "if": {
-//                 "properties": { "country": { "const": "Netherlands" } },
-//                 "required": ["country"]
-//               },
-//               "then": {
-//                 "properties": { "postal_code": { "pattern": "[0-9]{4} [A-Z]{2}" } }
-//               }
-//             }
-//           ]
-//     },
-//     "log": {
-//         "type": "string",
-//         "title": "Log",
-//         "description": "jq command to generate data for instance-logging."
-//     }
-// }
-
-// export const CommonSchemaDefinitionStateFields = {
-//     "transform": {
-//         "title": "Transform",
-//         "description": "jq command to transform the state's data output.",
-//         "type": "object",
-//         "oneOf": [{
-//                 "properties": {
-//                     "jqQuery": {
-//                         "type": "string"
-//                     }
-//                 }
-//             },
-//             {
-//                 "properties": {
-//                     "keyValueZ": {
-//                         "type": "object",
-//                         "title": "Key Value",
-//                         "description": "Key Value Transform",
-//                         "properties": {},
-//                         "additionalProperties": {
-//                             "type": "string"
-//                         }
-//                     }
-//                 }
-//             }
-//         ]
-//     },
-//     "log": {
-//         "type": "string",
-//         "title": "Log",
-//         "description": "jq command to generate data for instance-logging."
-//     }
-// }
-
-export const CommonSchemaDefinitionStateFields = {
-    "transform": {
-        "title": "Transform",
-        "description": "jq command to transform the state's data output.",
-        "type": "object",
-        "properties": {
-            "selectionType": {
-                "enum": [
-                    "jq",
-                    "keyValue"
-                ],
-                "default": "jq"
-            }
-        },
-        "allOf": [
-            {
-                "if": {
-                    "properties": {
-                        "selectionType": {
-                            "const": "jq"
-                        }
-                    }
-                },
-                "then": {
-                    "properties": {
-                        "jqQuery": {
-                            "type": "string"
-                        }
-                    },
-                    "required": [
-                        "jqQuery"
-                    ]
-                }
-            },
-            {
-                "if": {
-                    "properties": {
-                        "selectionType": {
-                            "const": "keyValue"
-                        }
-                    }
-                },
-                "then": {
-                    "properties": {
-                        "keyValueZ": {
-                            "type": "array",
-                            "minItems": 1,
-                            "title": "Key Value",
-                            "description": "Conditions to evaluate and determine which state to transition to next.",
-                            "items": {
-                                "type": "object",
-                                "required": [
-                                    "condition"
-                                ],
-                                "properties": {
-                                    "condition": {
-                                        "type": "string",
-                                        "title": "Condition",
-                                        "description": "jq command evaluated against state data. True if results are not empty."
-                                    },
-                                    "transform": {
-                                        "title": "Transform",
-                                        "description": "jq command to transform the state's data output.",
-                                        "type": "string"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "required": [
-                        "keyValueZ"
-                    ]
-                }
-            }
-        ]
-    },
-    "log": {
-        "type": "string",
-        "title": "Log",
-        "description": "jq command to generate data for instance-logging."
-    }
-}
-
-
 // States
 
 export const StateSchemaNoop = {
@@ -283,21 +149,298 @@ export const StateSchemaNoop = {
     }
 }
 
+export const StateSchemaConsumeEvent = {
+    "type": "object",
+    "required": [
+        "event",
+    ],
+    "properties": {
+        event: CommonSchemaDefinitionConsumeEvent,
+        timeout: CommonSchemaDefinitionTimeout,
+        ...CommonSchemaDefinitionStateFields,
+    }
+}
+
+export const StateSchemaDelay = {
+    "type": "object",
+    "required": [
+        "duration",
+    ],
+    "properties": {
+        "duration": {
+            "type": "string",
+            "title": "Duration",
+            "description": CommonSchemaDefinitionTimeout.description
+        },
+        ...CommonSchemaDefinitionStateFields,
+    }
+}
+
+export const StateSchemaError = {
+    "type": "object",
+    "required": [
+        "error",
+        "message"
+    ],
+    "properties": {
+        "error": {
+            "type": "string",
+            "title": "Error",
+            "description": "Error code, catchable on a calling workflow.",
+        },
+        "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Format string to provide more context to the error.",
+        },
+        "args": {
+            "type": "string",
+            "title": "Arguments",
+            "description": "A list of jq commands to generate arguments for substitution in the message format string.",
+        },
+        ...CommonSchemaDefinitionStateFields,
+    }
+}
+
+export const StateSchemaEventAnd = {
+    "type": "object",
+    "required": [
+        "events",
+    ],
+    "properties": {
+        "events": {
+            "type": "array",
+            "minItems": 1,
+            "title": "Events",
+            "description": "Events to consume.",
+            "items": {
+                "type": "object",
+                "required": [
+                    "event"
+                ],
+                "properties": {
+                    "event": CommonSchemaDefinitionConsumeEvent,
+                }
+            }
+        },
+        ...CommonSchemaDefinitionStateFields,
+    }
+}
+
+export const StateSchemaEventXor = {
+    "type": "object",
+    "required": [
+        "events",
+    ],
+    "properties": {
+        "events": {
+            "type": "array",
+            "minItems": 1,
+            "title": "Events",
+            "description": "Events to consume, and what to do based on which event was received.",
+            "items": {
+                "type": "object",
+                "required": [
+                    "event"
+                ],
+                "properties": {
+                    "event": CommonSchemaDefinitionConsumeEvent,
+                    "transform": CommonSchemaDefinitionStateFields.transform,
+                }
+            }
+        },
+        "log": CommonSchemaDefinitionStateFields.log,
+    }
+}
+
+export const StateSchemaForeach = {
+    "type": "object",
+    "required": [
+        "action",
+        "args"
+    ],
+    "properties": {
+        "array": {
+            "type": "string",
+            "title": "Array",
+            "description": "jq command to produce an array of objects to loop through.",
+        },
+        "action": CommonSchemaDefinitionAction,
+        "timeout": CommonSchemaDefinitionTimeout,
+        ...CommonSchemaDefinitionStateFields,
+    }
+}
+
+export const StateSchemaGenerateEvent = {
+    "type": "object",
+    "required": [
+        "event",
+    ],
+    "properties": {
+        "event": {
+            "type": "object",
+            "title": "Event Definition",
+            "description": "Event to generate.",
+            "required": [
+                "type",
+                "source"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "title": "Type",
+                    "description": "CloudEvent type."
+                },
+                "source": {
+                    "type": "string",
+                    "title": "Source",
+                    "description": "CloudEvent source."
+                },
+                "datacontenttype": {
+                    "type": "string",
+                    "title": "Data Content Type",
+                    "description": "An RFC 2046 string specifying the payload content type."
+                },
+                "data": {
+                    ...CommonSchemaDefinitionStateFields.transform,
+                    "title": "Data",
+                    "description": "Data to generate (payload) for the produced event."
+                },
+                "context": {
+                    "type": "object",
+                    "title": "Context",
+                    "description": "Key value pairs for CloudEvent context values that must match.",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                }
+            }
+        },
+        ...CommonSchemaDefinitionStateFields
+    }
+}
+
+export const StateSchemaGetter = {
+    "type": "object",
+    "required": [
+        "variables"
+    ],
+    "properties": {
+        "variables": {
+            "type": "array",
+            "title": "Variables",
+            "description": "Variables to fetch.",
+            "items": {
+                "type": "object",
+                "required": [
+                    "key",
+                    "scope"
+                ],
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "title": "Key",
+                        "description": "Variable name."
+                    },
+                    "scope": {
+                        "title": "Scope",
+                        "description": "Variable scope",
+                        "enum": [
+                            "workflow",
+                            "instance",
+                            "namespace"
+                        ],
+                        "default": "workflow"
+                    },
+                }
+            }
+        },
+        ...CommonSchemaDefinitionStateFields,
+    }
+}
+
+export const StateSchemaSetter = {
+    "type": "object",
+    "required": [
+        "variables"
+    ],
+    "properties": {
+        "variables": {
+            "type": "array",
+            "title": "Variables",
+            "description": "Variables to push.",
+            "items": {
+                "type": "object",
+                "required": [
+                    "key",
+                    "scope",
+                    "value"
+                ],
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "title": "Key",
+                        "description": "Variable name."
+                    },
+                    "scope": {
+                        "title": "Scope",
+                        "description": "Variable scope",
+                        "enum": [
+                            "workflow",
+                            "instance",
+                            "namespace"
+                        ],
+                        "default": "workflow"
+                    },
+                    "value": {
+                        ...CommonSchemaDefinitionStateFields.transform,
+                        "title": "Value",
+                        "description": "Value to generate variable value."
+                    },
+                    "mimeType": {
+                        "type": "string",
+                        "title": "Mime Type",
+                        "description": "MimeType to store variable value as."
+                    },
+                }
+            }
+        },
+        ...CommonSchemaDefinitionStateFields
+    }
+}
+
+export const StateSchemaValidate = {
+    "type": "object",
+    "required": [
+        "schema"
+    ],
+    "properties": {
+        "subject": {
+            "type": "string",
+            "title": "Subject",
+            "description": "jq command to select the subject of the schema validation. Defaults to '.' if unspecified."
+        },
+        "schema": {
+            "type": "string",
+            "title": "Schema",
+            "description": "Name of the referenced state data schema."
+        },
+        ...CommonSchemaDefinitionStateFields,
+    }
+}
+
+
 export const StateSchemaAction = {
     "type": "object",
     "properties": {
-        ...CommonSchemaDefinitionStateFields,
         "action": CommonSchemaDefinitionAction,
         "async": {
             "title": "Async",
             "description": "If workflow execution can continue without waiting for the action to return.",
             "type": "boolean"
         },
-        "timeout": {
-            "type": "string",
-            "title": "Timeout",
-            "description": "Duration to wait for action to complete (ISO8601)."
-        }
+        "timeout": CommonSchemaDefinitionTimeout,
+        ...CommonSchemaDefinitionStateFields,
     }
 }
 
@@ -307,7 +450,6 @@ export const StateSchemaSwitch = {
         "conditions"
     ],
     "properties": {
-        ...CommonSchemaDefinitionStateFields,
         "conditions": {
             "type": "array",
             "minItems": 1,
@@ -330,7 +472,8 @@ export const StateSchemaSwitch = {
                         "type": "string"
                     }
                 }
-            }
+            },
+            ...CommonSchemaDefinitionStateFields,
         }
     }
 }
@@ -339,6 +482,16 @@ export const StateSchemaSwitch = {
 // Map to all Schemas
 export const SchemaMap = {
     "stateSchemaNoop": StateSchemaNoop,
-    "stateSchemaAction":StateSchemaAction,
-    "stateSchemaSwitch":StateSchemaSwitch
+    "stateSchemaAction": StateSchemaAction,
+    "stateSchemaSwitch": StateSchemaSwitch,
+    "stateSchemaConsumeEvent": StateSchemaConsumeEvent,
+    "stateSchemaDelay": StateSchemaDelay,
+    "stateSchemaError": StateSchemaError,
+    "stateSchemaEventAnd": StateSchemaEventAnd,
+    "stateSchemaEventXor": StateSchemaEventXor,
+    "stateSchemaForeach": StateSchemaForeach,
+    "stateSchemaGenerateEvent": StateSchemaGenerateEvent,
+    "stateSchemaGetter": StateSchemaGetter,
+    "stateSchemaSetter": StateSchemaSetter,
+    "stateSchemaValidate": StateSchemaValidate,
 }

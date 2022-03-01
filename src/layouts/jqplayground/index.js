@@ -19,69 +19,28 @@ import { SchemaMap } from "./jsonSchema"
 import Form from '@rjsf/core';
 import { onSubmitCallbackMap, setConnections } from './util';
 import { AutoSizer, CellMeasurer, CellMeasurerCache, List } from 'react-virtualized';
+import SearchField from "react-search-field";
+import Fuse from 'fuse.js';
+import { ActionsNodes } from "./nodes";
 
-const ActionsNodes = [
-    {
-        name: 'StateNoop',
-        family: "primitive",
-        type: "noop",
-        info: {
-            description: "",
-            longDescription: ``,
-            link: ""
+
+import SearchInput, { createFilter } from 'react-search-input'
+import { exampleWorkflow, importFromYAML } from './import';
+
+const uiSchema = {
+    "transform": {
+        "jqQuery": {
+            "ui:widget": "textarea"
         },
-        data: {
-            schemaKey: 'stateSchemaNoop',
-            formData: {}
-        },
-        html: 'Noop State'
-    },
-    {
-        name: 'StateAction',
-        family: "primitive",
-        type: "action",
-        info: {
-            description: "The No-op State exists for when nothing more than generic state functionality is required.",
-            longDescription: `The No-op State exists for when nothing more than generic state functionality is required. A common use-case would be to perform a jq operation on the state data without performing another operation.`
-        },
-        link: "https://docs.direktiv.io/v0.6.0/specification/#noopstate",
-        data: {
-            schemaKey: 'stateSchemaAction',
-            formData: {}
-        },
-        html: 'Action State'
-    },
-    {
-        name: 'StateSwitch',
-        family: "primitive",
-        type: "switch",
-        info: {
-            description: "The Action State runs another workflow as a subflow, or a function as defined in the forms action definition",
-            longDescription: ``,
-            link: "https://docs.direktiv.io/v0.6.0/specification/#actionstate"
-        },
-        data: {
-            schemaKey: 'stateSchemaSwitch',
-            formData: {}
-        },
-        html: 'Switch State'
-    },
-    {
-        name: 'StartBlock',
-        family: "special",
-        type: "start",
-        info: {
-            description: "The Switch State is used to perform conditional transitions based on the current state information",
-            longDescription: ``,
-            link: "https://docs.direktiv.io/v0.6.0/specification/#switchstate"
-        },
-        data: {
-            schemaKey: 'stateSchemaSwitch',
-            formData: {}
-        },
-        html: 'Start Block'
+        "rawYAML": {
+            "ui:widget": "textarea"
+        }
     }
-]
+}
+
+const actionsNodesFuse = new Fuse(ActionsNodes, {
+    keys: ['name']
+})
 
 
 function Actions(props) {
@@ -148,7 +107,8 @@ function Actions(props) {
 
 export default function JQPlayground() {
     const [diagramEditor, setDiagramEditor] = useState(null);
-    const [selectedNode, setSelectedNode] = useState(0);
+    const [selectedNodeID, setSelectedNodeID] = useState(0);
+    const [selectedNode, setSelectedNode] = useState(null);
     const [formRef, setFormRef] = useState(null);
     const [error, setError] = useState(null)
     const [mouseDown, setMouseDown] = useState(false)
@@ -162,6 +122,10 @@ export default function JQPlayground() {
     const [formDrawerMinWidth, setFormDrawerMinWidth] = useState(160)
     const [formDrawerAutoShow, setFormDrawerAutoShow] = useState(true)
 
+    const [showContextMenu, setShowContextMenu] = useState(false);
+    const [contextMenuAnchorPoint, setContextMenuAnchorPoint] = useState({ x: 0, y: 0 });
+    const [contextMenuResults, setContextMenuResults] = useState(ActionsNodes)
+
     useEffect(() => {
         var id = document.getElementById("drawflow");
         console.log("id = ", id)
@@ -169,14 +133,21 @@ export default function JQPlayground() {
             let editor = new Drawflow(id)
             editor.start()
             editor.on('nodeSelected', function (id) {
-                setSelectedNode(id)
-                let node = editor.getNodeFromId(id)
-                console.log("XXX Node data =  ", node)
+                console.log("select node: ", id)
+                setSelectedNodeID(id)
+                const newNode = editor.getNodeFromId(id)
+                console.log("selected node = ", newNode)
+                setSelectedNode(newNode)
             })
 
             editor.on('nodeCreated', function (id) {
                 let newNode = editor.getNodeFromId(id)
-                newNode.data.id = `node-${id}-${newNode.data.type}`
+
+                // If node was created without id, geneate one
+                if (!newNode.data.id) {
+                    newNode.data.id = `node-${id}-${newNode.data.type}`
+                }
+
                 editor.updateNodeDataFromId(id, newNode.data)
             })
 
@@ -185,12 +156,20 @@ export default function JQPlayground() {
             })
 
             editor.on('nodeUnselected', function (e) {
-                setSelectedNode(0)
+                setSelectedNodeID(0)
+                setSelectedNode(null)
                 console.log("nodeUnselected event = ", e);
+            })
+
+            editor.on('nodeRemoved', function (e) {
+                setSelectedNodeID(0)
+                setSelectedNode(null)
+                console.log("nodeRemoved removed = ", e);
             })
 
             editor.on('click', function (e) {
                 console.log("user click event = ", e);
+                setShowContextMenu(false)
                 setMouseDown(true);
             })
 
@@ -200,9 +179,6 @@ export default function JQPlayground() {
             })
 
 
-            editor.addNode('StateNoop', 1, 1, 100, 100, "node primitive", { family: "primitive", type: "noop", schemaKey: 'stateSchemaNoop', formData: {} }, 'Noop State', false);
-            editor.addNode('StateAction', 1, 1, 250, 200, "node primitive", { family: "primitive", type: "action", schemaKey: 'stateSchemaAction', formData: {} }, 'Action State', false);
-            editor.addNode('StateSwitch', 1, 1, 350, 300, "node primitive", { family: "primitive", type: "switch", schemaKey: 'stateSchemaSwitch', formData: {} }, 'Switch State', false);
             editor.addNode('StartBlock', 0, 1, 1, 200, "node special start", { family: "special", type: "start", schemaKey: 'stateSchemaSwitch', formData: {} }, 'Start Block', false);
 
             setDiagramEditor(editor)
@@ -210,7 +186,7 @@ export default function JQPlayground() {
     }, [diagramEditor])
 
     useEffect(() => {
-        if (selectedNode === 0) {
+        if (selectedNodeID === 0) {
             setFormDrawerMinWidth(0)
             setFormDrawerWidth(0)
         } else {
@@ -218,7 +194,7 @@ export default function JQPlayground() {
             setFormDrawerMinWidth(20)
             setFormDrawerWidth(formDrawerWidthOld)
         }
-    }, [selectedNode, formDrawerWidthOld])
+    }, [selectedNodeID, formDrawerWidthOld])
 
     const resizeStyle = {
         display: "flex",
@@ -231,44 +207,106 @@ export default function JQPlayground() {
 
 
 
-const resizeStyleForm = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    flexDirection: "column",
-    background: "#f0f0f0",
-    zIndex: 30,
-    position: "absolute",
-    top: "0px",
-    bottom: "0px",
-    right: "0px",
-};
+    const resizeStyleForm = {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        flexDirection: "column",
+        background: "#f0f0f0",
+        zIndex: 30,
+        position: "absolute",
+        top: "0px",
+        bottom: "0px",
+        right: "0px",
+    };
 
-function formDrawerVisibility(width, mouseIsDown) {
-    if (width === 0) {
-        return {pointerEvents: "none", opacity: 0}
+    function formDrawerVisibility(width, mouseIsDown) {
+        if (width === 0) {
+            return { pointerEvents: "none", opacity: 0 }
+        }
+        if (mouseIsDown) {
+            return { pointerEvents: "none", opacity: 0.5, transition: "opacity cubic-bezier(1,-0.00,.09,.59) 0.3s" }
+        }
+
+        return {}
     }
-    if (mouseIsDown) {
-        return {pointerEvents: "none", opacity: 0.5, transition: "opacity cubic-bezier(1,-0.00,.09,.59) 0.3s"}
-    }
 
-    return {}
-}
+    const handleClick = useCallback(() => (showContextMenu ? setShowContextMenu(false) : null), [showContextMenu]);
+    useEffect(() => {
+        if (!showContextMenu) {
+            setContextMenuResults(ActionsNodes)
+        }
+    }, [showContextMenu]);
 
+    useEffect(() => {
+        document.addEventListener("click", handleClick);
+        return () => {
+            document.removeEventListener("click", handleClick);
+        };
+    });
 
 
     return (
         <>
+            {showContextMenu ? (
+                <div
+                    id='context-menu'
+                    className="context-menu"
+                    style={{
+                        top: contextMenuAnchorPoint.y,
+                        left: contextMenuAnchorPoint.x
+                    }}
+                >
+                    <div style={{ textAlign: "center", padding: "2px" }}>
+                        Add Node
+                    </div>
+                    <input autoFocus type="search" id="fname" name="fname" onChange={(ev) => {
+                        console.log("ev search = ", ev.target.value)
+                        setContextMenuResults(actionsNodesFuse.search(ev.target.value))
+                        console.log(contextMenuResults)
+                    }}
+                        onKeyDown={(ev) => {
+                            if (ev.key === 'Enter' && contextMenuResults.length > 0) {
+                                // TODO: Make function
+                                const newNode = contextMenuResults[0].item ? contextMenuResults[0].item : contextMenuResults[0]
+                                let pos_x = contextMenuAnchorPoint.x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)));
+                                let pos_y = contextMenuAnchorPoint.y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)));
+                                diagramEditor.addNode(newNode.name, newNode.connections.input, newNode.connections.output, pos_x, pos_y, `node ${newNode.family}`, { family: newNode.family, type: newNode.type, ...newNode.data }, newNode.html, false)
+                                setShowContextMenu(false)
+                            }
+                        }}
+                    ></input>
+                    <ul >
+                        {
+                            contextMenuResults.map((obj) => {
+                                return (
+                                    <li onClick={() => {
+                                        const newNode = obj.item ? obj.item : obj
+                                        let pos_x = contextMenuAnchorPoint.x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)));
+                                        let pos_y = contextMenuAnchorPoint.y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)));
+                                        diagramEditor.addNode(newNode.name, newNode.connections.input, newNode.connections.output, pos_x, pos_y, `node ${newNode.family}`, { family: newNode.family, type: newNode.type, ...newNode.data }, newNode.html, false)
+                                        setShowContextMenu(false)
+                                    }}>
+                                        {obj.name ? obj.name : obj.item.name}
+                                    </li>
+                                )
+                            })
+                        }
+                    </ul>
+                </div>
+            ) : (
+                <> </>
+            )}
             <FlexBox id="builder-page" className="col gap" style={{ paddingRight: "8px" }}>
                 {error ?
-                    <Alert className="critical" style={{flex:"0"}}>{error} </Alert>
+                    <Alert className="critical" style={{ flex: "0" }}>{error} </Alert>
                     :
                     <></>
                 }
                 {/* <div style={{height:"600px", width: "600px"}}> */}
                 <div className='toolbar'>
                     <div className='btn' onClick={() => {
-                         setError(null)
+                        setError(null)
                         //TODO: Split into another function
                         //TODO: Export to non-destructive json ✓
                         let rawExport = diagramEditor.export()
@@ -289,7 +327,7 @@ function formDrawerVisibility(width, mouseIsDown) {
                                 console.log("--> Found output = ", output)
                                 // TODO: handle to connections in start
                                 console.log("output.connections = ", output.connections)
-                                if ( output.connections.length === 0) {
+                                if (output.connections.length === 0) {
                                     setError("Start Node is not connected to any node")
                                     return
                                 }
@@ -344,8 +382,13 @@ function formDrawerVisibility(width, mouseIsDown) {
                     }}>
                         <div>Auto Show Details</div>
                     </div>
+                    <div className='btn' onClick={() => {
+                        importFromYAML(diagramEditor, exampleWorkflow)
+                    }}>
+                        <div>Import</div>
+                    </div>
                     <div>
-                        CURRENTLY SELECTED NODE: {selectedNode}
+                        CURRENTLY SELECTED NODE: {selectedNodeID}
                     </div>
                 </div>
                 <FlexBox style={{ margin: "5px", borderRadius: "16px", overflow: "hidden", boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px" }}>
@@ -387,8 +430,14 @@ function formDrawerVisibility(width, mouseIsDown) {
 
                                 pos_x = pos_x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)));
                                 pos_y = pos_y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)));
-                                diagramEditor.addNode(newNode.name, 1, 1, pos_x, pos_y, `node ${newNode.family}`, { family: newNode.family, type: newNode.type, ...newNode.data }, newNode.html, false)
+                                diagramEditor.addNode(newNode.name, newNode.connections.input, newNode.connections.output, pos_x, pos_y, `node ${newNode.family}`, { family: newNode.family, type: newNode.type, ...newNode.data }, newNode.html, false)
                                 // addNodeToDrawFlow(data, ev.clientX, ev.clientY);
+                            }}
+                            onContextMenu={(ev) => {
+                                console.log("CONTEXT MENU EV = ", ev)
+                                ev.preventDefault()
+                                setContextMenuAnchorPoint({ x: ev.pageX, y: ev.pageY })
+                                setShowContextMenu(true)
                             }}
                             onDragOver={(ev) => {
                                 ev.preventDefault(ev);
@@ -397,7 +446,7 @@ function formDrawerVisibility(width, mouseIsDown) {
                         >
                         </div>
                         <Resizable
-                            style={{ ...resizeStyleForm, ...formDrawerVisibility(formDrawerWidth, mouseDown)}}
+                            style={{ ...resizeStyleForm, ...formDrawerVisibility(formDrawerWidth, mouseDown) }}
                             onResizeStop={(e, direction, ref, d) => {
                                 setFormDrawerWidthOld(formDrawerWidthOld + d.width)
                                 setFormDrawerWidth(formDrawerWidth + d.width)
@@ -408,7 +457,7 @@ function formDrawerVisibility(width, mouseIsDown) {
                         >
                             <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", borderBottom: "1px solid #e5e5e5", paddingBottom: "6px", borderLeft: "7px solid rgb(131, 131, 131)", width: "100%" }}>
                                 <h2 style={{ margin: "6px", textAlign: "center" }}>
-                                    Switch State
+                                    {selectedNode ? `${selectedNode.html} Details` : "No Node Selected"}
                                 </h2>
                                 <div className='btn' style={{ backgroundColor: "pink", cursor: "pointer", paddingTop: "0px", paddingBottom: "0px" }} onClick={() => {
                                     formRef.click()
@@ -424,20 +473,24 @@ function formDrawerVisibility(width, mouseIsDown) {
                                             console.log("form.formData = ", form.formData)
 
                                             // Update form data into node
-                                            let node = diagramEditor.getNodeFromId(selectedNode)
+                                            const node = selectedNode
                                             node.data.formData = form.formData
                                             console.log("!!!node!#@!$!@$@! = ", node)
-                                            diagramEditor.updateNodeDataFromId(selectedNode, node.data)
+                                            diagramEditor.updateNodeDataFromId(selectedNodeID, node.data)
 
                                             // Do Custom callback logic if it exists for data type
                                             let onSubmitCallback = onSubmitCallbackMap[node.name]
                                             if (onSubmitCallback) {
-                                                onSubmitCallback(node, diagramEditor)
+                                                onSubmitCallback(selectedNodeID, diagramEditor)
                                                 return
                                             }
+
+                                            // Maybe make a function for this to getNode again
+                                            setSelectedNode(node)
                                         }}
-                                        schema={selectedNode !== 0 ? SchemaMap[diagramEditor.getNodeFromId(selectedNode).data.schemaKey] : {}}
-                                        formData={selectedNode !== 0 ? diagramEditor.getNodeFromId(selectedNode).data.formData : {}}
+                                        schema={selectedNode ? SchemaMap[selectedNode.data.schemaKey] : {}}
+                                        uiSchema={uiSchema}
+                                        formData={selectedNode ? selectedNode.data.formData : {}}
                                     >
                                         <button ref={setFormRef} style={{ display: "none" }} />
                                     </Form>

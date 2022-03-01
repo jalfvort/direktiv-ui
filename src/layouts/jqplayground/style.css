@@ -238,3 +238,47 @@
     box-shadow: 1.21446px 1.21446px 3.64339px hsla(var(--special-accent), 90%, 1.24);
     background-color: hsl(var(--special-accent), 90%);
 }
+
+
+/* Special */
+#root_transform_keyValue__title{
+    
+}
+
+/* CONTEXT MENU */
+.context-menu {
+    font-size: 14px;
+    background-color: #fff;
+    border-radius: 2px;
+    padding: 0px 2px 5px 2px;
+    width: 150px;
+    height: auto;
+    margin: 0;
+  /* use absolute positioning  */
+    position: absolute;
+    list-style: none;
+    box-shadow: 0 0 20px 0 #ccc;
+    opacity: 1;
+    transition: opacity 0.5s linear;
+    z-index: 90;
+}
+
+#context-menu ul {
+    list-style: none;
+    margin: 0px;
+    padding-left: 0px;
+}
+
+#context-menu li {
+    cursor: pointer;
+    padding-left: 5px;
+}
+
+#context-menu li:hover {
+    background-color: #e5e5e5;
+    padding-left: 6px;
+}
+
+#context-menu input {
+    height: 24px;
+}
