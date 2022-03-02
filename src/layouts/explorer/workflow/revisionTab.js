@@ -21,6 +21,7 @@ import { ApiFragment } from '..';
 
 import Form from "@rjsf/core";
 import  Tabs  from '../../../components/tabs';
+import Tippy from '@tippyjs/react';
 
 function RevisionTab(props) {
 
@@ -194,13 +195,15 @@ function RevisionTab(props) {
 }
 
 export default RevisionTab;
-
 export function TabbedButtons(props) {
 
-    let {tabBtn, setTabBtn, searchParams, setSearchParams, revision} = props;
+    let {tabBtn, setTabBtn, searchParams, setSearchParams, revision, enableDiagramEditor} = props;
 
     let tabBtns = [];
     let tabBtnLabels = ["YAML", "Diagram", "Sankey"];
+    if (enableDiagramEditor !== undefined) {
+        tabBtnLabels = ["YAML", "Editor", "Diagram", "Sankey"];
+    }
 
     for (let i = 0; i < tabBtnLabels.length; i++) {
         let key = GenerateRandomKey();
@@ -209,8 +212,23 @@ export function TabbedButtons(props) {
             classes += " active-tab-btn"
         }
 
-        tabBtns.push(<FlexBox key={key} className={classes}>
-            <div onClick={() => {
+        if (tabBtnLabels[i] === "Editor" && !enableDiagramEditor) {
+            classes += " disable"
+            tabBtns.push(
+                <FlexBox key={key} className={classes}>
+                    <Tippy content={"Unsaved changes in Workflow"} trigger={'mouseenter focus click'} zIndex={10}>
+                        <div>
+                            {tabBtnLabels[i]}
+                        </div>
+                    </Tippy>
+                </FlexBox>
+            )
+            continue
+
+        }
+
+        tabBtns.push(
+            <FlexBox key={key} className={classes} onClick={() => {
                 setTabBtn(i)
                 setSearchParams({
                     tab: searchParams.get('tab'),
@@ -218,9 +236,11 @@ export function TabbedButtons(props) {
                     revtab: i
                 })
             }}>
-                {tabBtnLabels[i]}
-            </div>
-        </FlexBox>)
+                <div>
+                    {tabBtnLabels[i]}
+                </div>
+            </FlexBox>
+        )
     }
 
     return(

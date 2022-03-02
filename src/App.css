@@ -411,7 +411,19 @@ select:focus-visible{
   font-style: italic;
 }
 
-/* .logs {
+.editor-footer {
+  background-color: rgb(34, 56, 72);
+  color: white;
+  height: 44px;
+  max-height: 44px;
+  padding-left: 10px;
+  min-height: 44px;
+  align-items: center;
+  position: relative;
+  border-radius: 0px 0px 8px 8px;
+}
+
+.logs {
   background-color: rgb(0, 34, 64);
   color: white;
   border-radius: 8px 8px 0px 0px;
@@ -429,6 +441,7 @@ select:focus-visible{
   box-shadow: rgb(252, 253, 254) 0px 0px 3px 0px;
 }
 
+/* 
 html:not(img):not(video) { 
   filter: invert(0.95) hue-rotate(180deg);
   background: black;
@@ -445,18 +458,6 @@ html .logs-footer {
 
 html .monaco-wrapper { 
   filter: invert(0.9) hue-rotate(210deg) brightness(1.2) contrast(1.05) saturate(1.1);
-}
-
-.editor-footer {
-  background-color: rgb(34, 56, 72);
-  color: white;
-  height: 44px;
-  max-height: 44px;
-  padding-left: 10px;
-  min-height: 44px;
-  align-items: center;
-  position: relative;
-  border-radius: 0px 0px 8px 8px;
 }
 
 html .editor-footer { 

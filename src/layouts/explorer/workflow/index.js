@@ -18,10 +18,13 @@ import {VscTag, VscNote, VscError, VscPass, VscChevronDown, VscChevronUp, VscTyp
 
 import { Service } from '../../namespace-services';
 import DirektivEditor from '../../../components/editor';
+import DiagramEditor from '../../../components/diagram-editor'
 import AddWorkflowVariablePanel from './variables';
 import { RevisionSelectorTab, TabbedButtons } from './revisionTab';
 import DependencyDiagram from '../../../components/dependency-diagram';
 import YAML from 'js-yaml'
+import PrettyYAML from "json-to-pretty-yaml"
+
 import WorkflowDiagram from '../../../components/diagram';
 
 import Slider from 'rc-slider';
@@ -309,6 +312,18 @@ function WorkingRevision(props) {
             setWorkflow(wf)
         }
     },[wf, workflow, load])
+
+    useEffect(()=>{
+        console.log("wf changed = ", wf)
+    },[workflow])
+
+    useEffect(()=>{
+        console.log("oldWf changed = ", oldWf)
+    },[oldWf])
+
+    useEffect(()=>{
+        console.log("wf changed = ", wf)
+    },[oldWf])
    
     useEffect(()=>{
         if (oldWf !== wf) {
@@ -351,7 +366,7 @@ function WorkingRevision(props) {
                             Active Revision
                         </div>
                         <HelpIcon msg={"Latest revision where you can edit and create new revisions."} />
-                        <TabbedButtons revision={"latest"} setSearchParams={setSearchParams} searchParams={searchParams} tabBtn={tabBtn} setTabBtn={setTabBtn} />
+                        <TabbedButtons revision={"latest"} setSearchParams={setSearchParams} searchParams={searchParams} tabBtn={tabBtn} setTabBtn={setTabBtn} enableDiagramEditor={oldWf === workflow}/>
                     </FlexBox>
                 </ContentPanelTitle>
                 <ContentPanelBody style={{padding: "0px"}}>
@@ -516,8 +531,14 @@ function WorkingRevision(props) {
                             </div>
                         </FlexBox>
                     </FlexBox>:""}
-                    {tabBtn === 1 ? <WorkflowDiagram disabled={true} workflow={YAML.load(workflow)}/>:""}
-                    {tabBtn === 2 ? <SankeyDiagram revision={"latest"} getWorkflowSankeyMetrics={getWorkflowSankeyMetrics} />:""}
+                    {tabBtn === 1 ? <DiagramEditor workflow={oldWf} updateWorkflow={(data)=>{
+                        console.log("data = ", data)
+                        console.log("PrettyYAML.stringify(data) = ", PrettyYAML.stringify(data))
+                        setWorkflow(PrettyYAML.stringify(data))
+                        setTabBtn(0)
+                    }}/>:""}
+                    {tabBtn === 2 ? <WorkflowDiagram disabled={true} workflow={YAML.load(workflow)}/>:""}
+                    {tabBtn === 3 ? <SankeyDiagram revision={"latest"} getWorkflowSankeyMetrics={getWorkflowSankeyMetrics} />:""}
                 </ContentPanelBody>
             </ContentPanel>
         </FlexBox>

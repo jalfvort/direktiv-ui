@@ -1,4 +1,4 @@
-import { ActionsNodes } from "./nodes";
+import { ActionsNodes, NodeStartBlock } from "./nodes";
 import YAML from 'js-yaml'
 
 
@@ -66,8 +66,16 @@ states:
 export function importFromYAML(diagramEditor, wfYAML) {
     const wfData = YAML.load(wfYAML)
     let nodeIDToStateIDMap = {}
-    let pos = {x: 20, y: 20}
+    let pos = {x: 20, y: 200}
 
+    // Add StartNode
+    const startNodeID = diagramEditor.addNode(NodeStartBlock.name, NodeStartBlock.connections.input, NodeStartBlock.connections.output, pos.x, pos.y, `node ${NodeStartBlock.family}`, {
+        family: NodeStartBlock.family, 
+        type: NodeStartBlock.type, 
+        formData: {}, 
+        schemaKey: NodeStartBlock.data.schemaKey 
+    }, NodeStartBlock.html, false)
+    
     // Iterate over states
     for (let i = 0; i < wfData.states.length; i++) {
         const state = wfData.states[i];
@@ -77,6 +85,9 @@ export function importFromYAML(diagramEditor, wfYAML) {
             console.warn("State type not found when importing from YAML")
             continue
         }
+
+        // Offset X
+        pos.x += 220
 
         // Add Node to Diagram
         const newNode = result[0]
@@ -116,7 +127,6 @@ export function importFromYAML(diagramEditor, wfYAML) {
          nodeIDToStateIDMap[state.id] = nodeID
          console.log("nodeIDToStateIDMap = ", nodeIDToStateIDMap)
 
-        pos.x += 220
     }
 
     // Iterate over states again and create connections
@@ -124,6 +134,11 @@ export function importFromYAML(diagramEditor, wfYAML) {
         const state = wfData.states[i];
         const nodeID = nodeIDToStateIDMap[state.id]
         const node = diagramEditor.getNodeFromId(nodeID)
+
+        // Connect Start Node to first state
+        if (i === 0) {
+            diagramEditor.addConnection(startNodeID, nodeID, 'output_1','input_1')
+        }
 
         let connCallback = importConnectionsCallbackMap[node.name]
         if (connCallback) {

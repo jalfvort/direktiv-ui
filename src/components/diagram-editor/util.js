@@ -1,12 +1,12 @@
 import { useJQPlayground } from 'direktiv-react-hooks';
 import { useCallback, useEffect, useState } from 'react';
 import { VscFileCode, VscArrowRight } from 'react-icons/vsc';
-import Button from '../../components/button';
-import ContentPanel, { ContentPanelBody, ContentPanelTitle, ContentPanelTitleIcon } from '../../components/content-panel';
-import DirektivEditor from '../../components/editor';
-import Alert from '../../components/alert';
-import FlexBox from '../../components/flexbox';
-import HelpIcon from '../../components/help';
+import Button from '../button';
+import ContentPanel, { ContentPanelBody, ContentPanelTitle, ContentPanelTitleIcon } from '../content-panel';
+import DirektivEditor from '../editor';
+import Alert from '../alert';
+import FlexBox from '../flexbox';
+import HelpIcon from '../help';
 import { Config } from '../../util';
 import './style.css';
 import Drawflow from 'drawflow';

@@ -1,3 +1,23 @@
+export const NodeStartBlock = {
+    name: 'StartBlock',
+    family: "special",
+    type: "start",
+    info: {
+        description: "DEBUG",
+        longDescription: `DEBUG`,
+        link: ""
+    },
+    data: {
+        schemaKey: 'stateSchemaSwitch',
+        formData: {}
+    },
+    connections: {
+        input: 0,
+        output: 1
+    },
+    html: 'Start Block'
+}
+
 export const ActionsNodes = [
     {
         name: 'StateNoop',
@@ -246,23 +266,6 @@ export const ActionsNodes = [
         },
         html: 'Switch State'
     },
-    {
-        name: 'StartBlock',
-        family: "special",
-        type: "start",
-        info: {
-            description: "DEBUG",
-            longDescription: `DEBUG`,
-            link: ""
-        },
-        data: {
-            schemaKey: 'stateSchemaSwitch',
-            formData: {}
-        },
-        connections: {
-            input: 1,
-            output: 1
-        },
-        html: 'Start Block'
-    }
+    NodeStartBlock
 ]
+
