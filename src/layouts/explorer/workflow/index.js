@@ -531,7 +531,7 @@ function WorkingRevision(props) {
                             </div>
                         </FlexBox>
                     </FlexBox>:""}
-                    {tabBtn === 1 ? <DiagramEditor workflow={oldWf} updateWorkflow={(data)=>{
+                    {tabBtn === 1 ? <DiagramEditor workflow={oldWf} namespace={namespace} updateWorkflow={(data)=>{
                         console.log("data = ", data)
                         console.log("PrettyYAML.stringify(data) = ", PrettyYAML.stringify(data))
                         setWorkflow(PrettyYAML.stringify(data))

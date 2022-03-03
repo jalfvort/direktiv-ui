@@ -18,6 +18,29 @@ export const NodeStartBlock = {
     html: 'Start Block'
 }
 
+
+export const NodeStateAction = {
+    name: 'StateAction',
+    family: "primitive",
+    type: "action",
+    info: {
+        description: "The Action State runs another workflow as a subflow, or a function as defined in the forms action definition",
+        longDescription: ``,
+        link: "https://docs.direktiv.io/v0.6.0/specification/#actionstate"
+    },
+    data: {
+        schemaKey: 'stateSchemaAction',
+        formData: {}
+    },
+    connections: {
+        input: 1,
+        output: 1
+    },
+    html: 'Action State'
+}
+
+
+
 export const ActionsNodes = [
     {
         name: 'StateNoop',
@@ -209,6 +232,7 @@ export const ActionsNodes = [
         },
         html: 'Setter State'
     },
+    NodeStateAction,
     {
         name: 'StateValidate',
         family: "primitive",
@@ -227,25 +251,6 @@ export const ActionsNodes = [
             output: 1
         },
         html: 'Validate State'
-    },
-    {
-        name: 'StateAction',
-        family: "primitive",
-        type: "action",
-        info: {
-            description: "The Action State runs another workflow as a subflow, or a function as defined in the forms action definition",
-            longDescription: ``,
-            link: "https://docs.direktiv.io/v0.6.0/specification/#actionstate"
-        },
-        data: {
-            schemaKey: 'stateSchemaAction',
-            formData: {}
-        },
-        connections: {
-            input: 1,
-            output: 1
-        },
-        html: 'Action State'
     },
     {
         name: 'StateSwitch',
@@ -268,4 +273,3 @@ export const ActionsNodes = [
     },
     NodeStartBlock
 ]
-

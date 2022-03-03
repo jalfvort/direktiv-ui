@@ -113,16 +113,11 @@ const CommonSchemaDefinitionAction = {
     "description": "Action to perform.",
     "properties": {
         "function": {
+            "enum": [
+            ],
             "type": "string",
             "title": "Function",
             "description": "Name of the referenced function.",
-            "examples": [
-                "direktiv/request",
-                "direktiv/python",
-                "direktiv/smtp-receiver",
-                "direktiv/sql",
-                "direktiv/image-watermark"
-            ]
         },
         "input": {
             ...CommonSchemaDefinitionStateFields.transform,
@@ -472,15 +467,287 @@ export const StateSchemaSwitch = {
                         "type": "string"
                     }
                 }
-            },
-            ...CommonSchemaDefinitionStateFields,
+            }
+        },
+        "defaultTransform": {
+            ...CommonSchemaDefinitionStateFields.transform,
+            "title": "Default Transform",
+            "descrtiption": "jq command to transform the state's data output."
         }
     }
+}
+
+// Functions Schemas
+export const FunctionSchemaGlobal = {
+    "type": "object",
+    "required": [
+        "id",
+        "service"
+    ],
+    "properties": {
+        "id": {
+            "type": "string",
+            "title": "ID",
+            "description": "Function definition unique identifier."
+        },
+        "service": {
+            "type": "string",
+            "title": "Service",
+            "description": "The service being referenced."
+        },
+        "files": {
+            "type": "array",
+            "minItems": 0,
+            "title": "Files",
+            "description": "Workflow file definition.",
+            "items": {
+                "type": "object",
+                "required": [
+                    "key"
+                ],
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "title": "Key",
+                        "description": "Key used to select variable."
+                    },
+                    "scope": {
+                        "title": "Scope",
+                        "description": "Scope used to select variable. Defaults to 'instance', but can be 'workflow' or 'namespace'.",
+                        "type": "string"
+                    },
+                    "as": {
+                        "title": "As",
+                        "description": "Set the filename of the file. The default is the same as the key.",
+                        "type": "string"
+                    },
+                    "type": {
+                        "title": "Type",
+                        "description": "How to treat the file. Options include 'plain', 'base64', 'tar', 'tar.gz'.",
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    }
+}
+
+export const FunctionSchemaNamespace = {
+    "type": "object",
+    "required": [
+        "id",
+        "service"
+    ],
+    "properties": {
+        "id": {
+            "type": "string",
+            "title": "ID",
+            "description": "Function definition unique identifier."
+        },
+        "service": {
+            "type": "string",
+            "title": "Service",
+            "description": "The service being referenced."
+        },
+        "files": {
+            "type": "array",
+            "minItems": 0,
+            "title": "Files",
+            "description": "Workflow file definition.",
+            "items": {
+                "type": "object",
+                "required": [
+                    "key"
+                ],
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "title": "Key",
+                        "description": "Key used to select variable."
+                    },
+                    "scope": {
+                        "title": "Scope",
+                        "description": "Scope used to select variable. Defaults to 'instance', but can be 'workflow' or 'namespace'.",
+                        "type": "string"
+                    },
+                    "as": {
+                        "title": "As",
+                        "description": "Set the filename of the file. The default is the same as the key.",
+                        "type": "string"
+                    },
+                    "type": {
+                        "title": "Type",
+                        "description": "How to treat the file. Options include 'plain', 'base64', 'tar', 'tar.gz'.",
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    }
+}
+
+export const FunctionSchemaReusable = {
+    "type": "object",
+    "required": [
+        "id",
+        "image"
+    ],
+    "properties": {
+        "id": {
+            "type": "string",
+            "title": "ID",
+            "description": "Function definition unique identifier."
+        },
+        "image": {
+            "type": "string",
+            "title": "Image",
+            "description": "Image URI.",
+            "examples": [
+                "direktiv/request",
+                "direktiv/python",
+                "direktiv/smtp-receiver",
+                "direktiv/sql",
+                "direktiv/image-watermark"
+            ]
+        },
+        "cmd": {
+            "type": "string",
+            "title": "CMD",
+            "description": "Command to run in container"
+        },
+        "size": {
+            "type": "string",
+            "title": "Size",
+            "description": "Size of virtual machine"
+        },
+        "scale": {
+            "type": "integer",
+            "title": "Scale",
+            "description": "Minimum number of instances"
+        },
+        "files": {
+            "type": "array",
+            "minItems": 0,
+            "title": "Files",
+            "description": "Workflow file definition.",
+            "items": {
+                "type": "object",
+                "required": [
+                    "key"
+                ],
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "title": "Key",
+                        "description": "Key used to select variable."
+                    },
+                    "scope": {
+                        "title": "Scope",
+                        "description": "Scope used to select variable. Defaults to 'instance', but can be 'workflow' or 'namespace'.",
+                        "type": "string"
+                    },
+                    "as": {
+                        "title": "As",
+                        "description": "Set the filename of the file. The default is the same as the key.",
+                        "type": "string"
+                    },
+                    "type": {
+                        "title": "Type",
+                        "description": "How to treat the file. Options include 'plain', 'base64', 'tar', 'tar.gz'.",
+                        "type": "string"
+                    }
+                }
+            }
+        },
+    }
+}
+
+export const FunctionSchemaSubflow = {
+    "type": "object",
+    "required": [
+        "id",
+        "workflow"
+    ],
+    "properties": {
+        "id": {
+            "type": "string",
+            "title": "ID",
+            "description": "Function definition unique identifier."
+        },
+        "workflow": {
+            "type": "string",
+            "title": "Workflow",
+            "description": "ID of workflow within the same namespace."
+        }
+    }
+}
+
+export const FunctionSchema = {
+    "type": "object",
+    "required": [
+        "type"
+    ],
+    "properties": {
+        "type": {
+            "enum": [
+                "reusable",
+                "knative-namespace",
+                "knative-global",
+                "subflow"
+            ],
+            "default": "reusable",
+            "title": "Service Type",
+            "description": "Function type of new service"
+        }
+    },
+    "allOf": [
+        {
+            "if": {
+                "properties": {
+                    "type": {
+                        "const": "reusable"
+                    }
+                }
+            },
+            "then": FunctionSchemaReusable
+        },
+        {
+            "if": {
+                "properties": {
+                    "type": {
+                        "const": "knative-namespace"
+                    }
+                }
+            },
+            "then": FunctionSchemaNamespace
+        },
+        {
+            "if": {
+                "properties": {
+                    "type": {
+                        "const": "knative-global"
+                    }
+                }
+            },
+            "then": FunctionSchemaGlobal
+        },
+        {
+            "if": {
+                "properties": {
+                    "type": {
+                        "const": "subflow"
+                    }
+                }
+            },
+            "then": FunctionSchemaSubflow
+        }
+    ]
 }
 
 
 // Map to all Schemas
 export const SchemaMap = {
+    // States
     "stateSchemaNoop": StateSchemaNoop,
     "stateSchemaAction": StateSchemaAction,
     "stateSchemaSwitch": StateSchemaSwitch,
@@ -494,4 +761,13 @@ export const SchemaMap = {
     "stateSchemaGetter": StateSchemaGetter,
     "stateSchemaSetter": StateSchemaSetter,
     "stateSchemaValidate": StateSchemaValidate,
+
+    // Functions
+    "functionSchemaGlobal": FunctionSchemaGlobal,
+    "functionSchemaNamespace": FunctionSchemaNamespace,
+    "functionSchemaReusable": FunctionSchemaReusable,
+    "functionSchemaSubflow": FunctionSchemaSubflow,
+    "functionSchema": FunctionSchema
 }
+
+

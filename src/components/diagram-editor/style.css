@@ -111,8 +111,15 @@
 #builder-page .panel {
     width: 100%;
     height: 100%;
-    overflow: auto;
-    background-color: #7fe4e4;
+    /* overflow: auto; */
+}
+
+#builder-page .function-btn {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    width: 100%;
+    text-align: center;
+    margin-bottom: 6px;
 }
 
 #builder-page .panel.left {
@@ -258,6 +265,19 @@
     border: 1px solid hsl(var(--special-accent), 70%);
     box-shadow: 1.21446px 1.21446px 3.64339px hsla(var(--special-accent), 90%, 1.24);
     background-color: hsl(var(--special-accent), 90%);
+}
+
+/* Function Bar */
+
+#builder-page .function {
+    width: 100%;
+    margin: 6px;
+    border-radius: 2.42892px;
+}
+#builder-page .function {
+    border: 1px solid hsl(var(--primitive-accent), 70%);
+    box-shadow: 1.21446px 1.21446px 3.64339px hsla(var(--primitive-accent), 90%, 1.24);
+    background-color: hsl(var(--primitive-accent), 90%);
 }
 
 

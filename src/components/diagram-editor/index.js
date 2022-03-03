@@ -21,11 +21,16 @@ import { onSubmitCallbackMap, setConnections } from '../../components/diagram-ed
 import { AutoSizer, CellMeasurer, CellMeasurerCache, List } from 'react-virtualized';
 import SearchField from "react-search-field";
 import Fuse from 'fuse.js';
-import { ActionsNodes } from "../../components/diagram-editor/nodes";
+import { ActionsNodes, NodeStateAction } from "../../components/diagram-editor/nodes";
+import { useNamespaceServices } from "direktiv-react-hooks";
+
 
 
 import SearchInput, { createFilter } from 'react-search-input'
 import { exampleWorkflow, importFromYAML } from '../../components/diagram-editor/import';
+import Modal, { ButtonDefinition } from '../modal';
+
+import Ajv from "ajv"
 
 const uiSchema = {
     "transform": {
@@ -52,7 +57,7 @@ function Actions(props) {
     function rowRenderer({ index, parent, key, style }) {
         return (
             <CellMeasurer
-                key={key}
+                key={`action-${key}`}
                 cache={cache}
                 parent={parent}
                 columnIndex={0}
@@ -105,8 +110,191 @@ function Actions(props) {
     )
 }
 
+function FunctionsList(props) {
+    const {functionList, setFunctionList} = props
+
+    // const [functionList, setFunctionList] = useState([])
+    const [newFunctionFormRef, setNewFunctionFormRef] = useState(null)
+    const [formData, setFormData] = useState({})
+    // const {data} = useNamespaceServices(Config.url, false, namespace, localStorage.getItem("apikey"))
+
+    // console.log("useNamespaceServices data = ", data)
+
+
+    const ajv = new Ajv()
+    const schema = SchemaMap["functionSchema"]
+    const validate = ajv.compile(schema)
+
+
+    useEffect(() => {
+        console.log("mounting functions list")
+        return () => { console.log("unmounting functions list")};
+    },[])
+
+    // useEffect(()=>{
+    //     const newfMap = functionsList.reduce(function(result, item, index, array) {
+    //         result[item.id] = item;
+    //         return result;
+    //       }, {}) 
+
+    //       console.log("updating function map to =", newfMap)
+    //     setFunctionMap({...newfMap})
+    //     console.log()
+    // },[functionsList])
+
+    const cache = new CellMeasurerCache({
+        fixedWidth: false,
+        fixedHeight: true
+    })
+
+    function rowRenderer({ index, parent, key, style }) {
+        return (
+            <CellMeasurer
+                key={key}
+                cache={cache}
+                parent={parent}
+                columnIndex={0}
+                rowIndex={index}
+            >
+                <div style={{ ...style, minHeight: "6px", height: "64px", cursor: "move", userSelect: "none", display: "flex" }}>
+                    <div className={`function`} draggable={true} function-index={index} onDragStart={(ev) => {
+                        // console.log("onDragStart = ", ev);
+                        // console.log("ev.target.getAttribute(node-index) = ", ev.target.getAttribute("node-index"))
+                        ev.dataTransfer.setData("functionIndex", ev.target.getAttribute("function-index"));
+                    }}>
+                        <div style={{ marginLeft: "5px" }}>
+                            <div style={{ display: "flex", borderBottom: "1px solid #e5e5e5", justifyContent: "space-between" }}>
+                                <span style={{ whiteSpace: "pre-wrap", cursor: "move", fontSize: "13px" }}>
+                                    ID: {functionList[index].id}
+                                </span>
+                                <div style={{ whiteSpace: "pre-wrap", cursor: "pointer", fontSize: "11px", paddingRight: "3px" }}>
+                                    Edit
+                                </div>
+                            </div>
+                            <div style={{ fontSize: "10px", lineHeight: "10px", paddingTop: "2px" }}>
+                                Type: {functionList[index].type}
+                            </div>
+                            <div style={{ fontSize: "10px", lineHeight: "10px", paddingTop: "2px" }}>
+                                {functionList[index].service ? `Service: ${functionList[index].service}`: ""}
+                                {functionList[index].image ? `Image: ${functionList[index].image}`: ""}
+                                {functionList[index].workflow ? `Workflow: ${functionList[index].workflow}`: ""}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </CellMeasurer>
+        );
+    }
+
+    return (
+        <>
+            <Modal
+                style={{ justifyContent: "center" }}
+                className="run-workflow-modal"
+                modalStyle={{ color: "black" }}
+                title={`Run Workflow`}
+                onClose={() => {
+                    //TODO:
+                }}
+                onOpen={() => {
+                    //TODO:
+                }}
+                actionButtons={[
+                    ButtonDefinition("Create Function", async () => {
+                        newFunctionFormRef.click()
+
+                        // Check if form data is valid
+                        if (!validate(formData)){
+                            throw Error("Invalid Function")
+                        }
+
+                        // Throw error if id already exists
+                        const result = functionList.filter(functionItem => functionItem.id === formData.id)
+                        if (result.length > 0) {
+                            throw Error(`Function '${formData.id}' already exists`)
+                        }
+
+                        // Update list
+                        setFunctionList((oldfList)=>{
+                            oldfList.push(formData)
+                            return [...oldfList]
+                        })
+                    }, "small blue", ()=>{}, true, false),
+                    ButtonDefinition("Cancel", async () => {
+                    }, "small light", ()=>{}, true, false)
+                ]}
+                button={(
+                    <div className={`btn function-btn`}>
+                        New function
+                    </div>
+                )}
+            >
+                <FlexBox className="col" style={{ height: "45vh", width: "35vw", minWidth: "250px", minHeight: "200px", justifyContent: "space-between" }}>
+                    <div style={{overflow: "auto"}}>
+                        {/* <label style={{fontSize: "11px", lineHeight: "13px", fontWeight: "bold"}}>
+                            Choose Function Type*
+                        </label>
+                        <p style={{fontSize: "9px", lineHeight: "12px", margin: "0px 0px 4px 0px"}}>
+                            Function type of new service
+                        </p>
+                        <select style={{width:"100%"}} defaultValue={newServiceType} onChange={(e)=>setNewServiceType(e.target.value)} style={{marginBottom:"4px", height:"26px", lineHeight:"20px", padding:"0px"}}>
+                            <option value="reusable">Reusable</option>
+                            <option value="knative-namespace">Namespace Service</option>
+                            <option value="knative-global">Global Service</option>
+                            <option value="subflow">Subflow</option>
+                        </select> */}
+
+                        <Form
+                            id={"builder-form"}
+                            onSubmit={(form) => {
+                            }}
+                            schema={schema}
+                            formData={formData}
+                            onChange={(e)=>{
+                                setFormData(e.formData)
+                            }}
+                        >
+                            <button ref={setNewFunctionFormRef} style={{ display: "none" }} />
+                        </Form>
+                    </div>
+                    {/* <div style={{minWidth: "28px"}}>
+                        <div className="btn" onClick={()=>{
+                            console.log(newFunctionFormRef.click())
+                        }}>
+                            Create Function
+                        </div>
+                    </div> */}
+
+                </FlexBox>
+            </Modal>
+            {functionList.length > 0 ? (
+                <AutoSizer>
+                    {({ height, width }) => (
+                            <List
+                                width={width}
+                                height={height}
+                                rowRenderer={rowRenderer}
+                                deferredMeasurementCache={cache}
+                                scrollToIndex={0}
+                                rowCount={functionList.length}
+                                rowHeight={64}
+                                scrollToAlignment={"start"}
+                            />
+                    )}
+                </AutoSizer>)
+                :
+                (<>
+                    <div style={{ display: "flex", justifyContent: "center" }}>
+                        No maidens?
+                    </div>
+                </>)}
+        </>
+    )
+}
+
 export default function DiagramEditor(props) {
-    const {workflow, updateWorkflow} = props
+    const {workflow, namespace, updateWorkflow} = props
 
     const [diagramEditor, setDiagramEditor] = useState(null);
     const [load, setLoad] = useState(false);
@@ -120,6 +308,11 @@ export default function DiagramEditor(props) {
     const [actionDrawerWidth, setActionDrawerWidth] = useState(0)
     const [actionDrawerWidthOld, setActionDrawerWidthOld] = useState(200)
     const [actionDrawerMinWidth, setActionDrawerMinWidth] = useState(0)
+
+    const [functionDrawerWidth, setFunctionDrawerWidth] = useState(0)
+    const [functionDrawerWidthOld, setFunctionDrawerWidthOld] = useState(200)
+    const [functionDrawerMinWidth, setFunctionDrawerMinWidth] = useState(0)
+    const [functionList, setFunctionList] = useState([])
 
     const [formDrawerWidth, setFormDrawerWidth] = useState(340)
     const [formDrawerWidthOld, setFormDrawerWidthOld] = useState(340)
@@ -194,7 +387,7 @@ export default function DiagramEditor(props) {
 
             // Import if workflow prop is passed
             if (workflow) {
-                importFromYAML(editor, workflow)
+                importFromYAML(editor, setFunctionList, workflow)
             }
         }
     }, [diagramEditor])
@@ -258,6 +451,27 @@ export default function DiagramEditor(props) {
             document.removeEventListener("click", handleClick);
         };
     });
+
+    const getSchema = useCallback(() => {
+        let baseSchema = SchemaMap[selectedNode.data.schemaKey]
+        if (selectedNode.data.schemaKey !== "stateSchemaAction") {
+            return baseSchema
+        }
+
+
+        // TODO: convert to callback map
+        let availableFunctions = []
+        for (let i = 0; i < functionList.length; i++) {
+            const f = functionList[i];
+            availableFunctions.push(f.id)
+        }
+
+        console.log("availableFunctions = ", availableFunctions)
+
+        baseSchema.properties.action.properties.function.enum = availableFunctions
+
+        return baseSchema
+    }, [selectedNode, functionList])
 
 
     return (
@@ -325,7 +539,7 @@ export default function DiagramEditor(props) {
                         //TODO: Export to non-destructive json ✓
                         let rawExport = diagramEditor.export()
                         let rawData = rawExport.drawflow.Home.data
-                        let wfData = { states: [] }
+                        let wfData = { functions: functionList, states: [] }
                         //TODO: 
                         // - Find Start Block ✓
                         // - Check if there are multiple start blocks
@@ -373,6 +587,10 @@ export default function DiagramEditor(props) {
                         if (actionDrawerMinWidth === 0) {
                             setActionDrawerMinWidth(20)
                             setActionDrawerWidth(actionDrawerWidthOld)
+
+                            // Hide Functions
+                            setFunctionDrawerMinWidth(0)
+                            setFunctionDrawerWidth(0)
                         } else {
                             setActionDrawerMinWidth(0)
                             setActionDrawerWidth(0)
@@ -391,12 +609,16 @@ export default function DiagramEditor(props) {
                         }
                     </div>
                     <div className='toolbar-btn' onClick={() => {
-                        if (actionDrawerMinWidth === 0) {
-                            setActionDrawerMinWidth(20)
-                            setActionDrawerWidth(actionDrawerWidthOld)
-                        } else {
+                        if (functionDrawerMinWidth === 0) {
+                            setFunctionDrawerMinWidth(20)
+                            setFunctionDrawerWidth(actionDrawerWidthOld)
+
+                            // Hide Node Actions
                             setActionDrawerMinWidth(0)
                             setActionDrawerWidth(0)
+                        } else {
+                            setFunctionDrawerMinWidth(0)
+                            setFunctionDrawerWidth(0)
                         }
                     }}>
                         {actionDrawerMinWidth === 0 ?
@@ -468,19 +690,52 @@ export default function DiagramEditor(props) {
 
                             </div>
                         </Resizable>
+                        <Resizable
+                            style={{ ...resizeStyle, pointerEvents: functionDrawerWidth === 0 ? "none" : "", opacity: functionDrawerWidth === 0 ? 0 : 100 }}
+                            size={{ width: functionDrawerWidth, height: "100%" }}
+                            onResizeStop={(e, direction, ref, d) => {
+                                setFunctionDrawerWidthOld(functionDrawerWidth + d.width)
+                                setFunctionDrawerWidth(functionDrawerWidth + d.width)
+                            }}
+                            maxWidth="40%"
+                            minWidth={functionDrawerMinWidth}
+                        >
+                            <div className={"panel left"} style={{ display: "flex" }}>
+                                <div style={{ width: "100%", margin: "10px" }}>
+                                    <FunctionsList functionList={functionList} setFunctionList={setFunctionList} namespace={namespace}/>
+                                </div>
+                            </div>
+                        </Resizable>
                         <div id="drawflow" style={{ height: "100%", width: "100%" }}
                             onDrop={(ev) => {
                                 console.log("onDrop event = ", ev)
                                 ev.preventDefault();
                                 var nodeIndex = ev.dataTransfer.getData("nodeIndex");
-                                console.log("event data = ", nodeIndex)
+                                var functionIndex = ev.dataTransfer.getData("functionIndex");
+                                console.log("nodeIndex data = ", nodeIndex)
+                                console.log("functionIndex data = ", functionIndex)
+
+                                
 
                                 let pos_x = ev.clientX
                                 let pos_y = ev.clientY
-                                const newNode = ActionsNodes[nodeIndex]
-
                                 pos_x = pos_x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)));
                                 pos_y = pos_y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)));
+
+                                // TODO: handle function on drop in a seperate function
+                                if (functionIndex !== "") {
+                                    let newNode = NodeStateAction
+                                    newNode.data.formData = {
+                                        action: {
+                                            function: functionList[functionIndex].id
+                                        }
+                                    }
+                                    diagramEditor.addNode(newNode.name, newNode.connections.input, newNode.connections.output, pos_x, pos_y, `node ${newNode.family}`, { family: newNode.family, type: newNode.type, ...newNode.data }, newNode.html, false)
+
+                                    return
+                                }
+                                
+                                const newNode = ActionsNodes[nodeIndex]
                                 diagramEditor.addNode(newNode.name, newNode.connections.input, newNode.connections.output, pos_x, pos_y, `node ${newNode.family}`, { family: newNode.family, type: newNode.type, ...newNode.data }, newNode.html, false)
                                 // addNodeToDrawFlow(data, ev.clientX, ev.clientY);
                             }}
@@ -539,7 +794,7 @@ export default function DiagramEditor(props) {
                                             // Maybe make a function for this to getNode again
                                             setSelectedNode(node)
                                         }}
-                                        schema={selectedNode ? SchemaMap[selectedNode.data.schemaKey] : {}}
+                                        schema={selectedNode ? getSchema() : {}}
                                         uiSchema={uiSchema}
                                         formData={selectedNode ? selectedNode.data.formData : {}}
                                     >

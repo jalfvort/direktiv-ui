@@ -63,10 +63,15 @@ states:
     solvedexpression: jq(.return)
 `
 
-export function importFromYAML(diagramEditor, wfYAML) {
+export function importFromYAML(diagramEditor, setFunctions, wfYAML) {
     const wfData = YAML.load(wfYAML)
     let nodeIDToStateIDMap = {}
     let pos = {x: 20, y: 200}
+
+    // Set functions
+    if (wfData.functions) {
+        setFunctions(wfData.functions)
+    }
 
     // Add StartNode
     const startNodeID = diagramEditor.addNode(NodeStartBlock.name, NodeStartBlock.connections.input, NodeStartBlock.connections.output, pos.x, pos.y, `node ${NodeStartBlock.family}`, {
