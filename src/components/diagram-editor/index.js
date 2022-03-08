@@ -1,34 +1,28 @@
-import { useJQPlayground } from 'direktiv-react-hooks';
+import { useGlobalServices, useNamespaceVariables, useNamespaceServices } from 'direktiv-react-hooks';
 import { useCallback, useEffect, useState } from 'react';
-import { VscFileCode, VscArrowRight, VscGear, VscListUnordered, VscSymbolEvent } from 'react-icons/vsc';
+import { VscGear, VscListUnordered, VscSymbolEvent } from 'react-icons/vsc';
 import Button from '../../components/button';
-import ContentPanel, { ContentPanelBody, ContentPanelTitle, ContentPanelTitleIcon } from '../../components/content-panel';
-import DirektivEditor from '../../components/editor';
 import Alert from '../../components/alert';
 import FlexBox from '../../components/flexbox';
-import HelpIcon from '../../components/help';
 import { Config } from '../../util';
 import './style.css';
 import Drawflow from 'drawflow';
 import { Resizable } from 're-resizable';
-import styleDrawflow from 'drawflow/dist/drawflow.min.css'
 import YAML from "json-to-pretty-yaml"
-import { ContextMenu, MenuItem, ContextMenuTrigger } from "react-contextmenu";
+import styleDrawflow from 'drawflow/dist/drawflow.min.css'
 
-import { SchemaMap } from "../../components/diagram-editor/jsonSchema"
+
+import { GenerateFunctionSchemaWithEnum, GetSchema } from "../../components/diagram-editor/jsonSchema"
 import Form from '@rjsf/core';
-import { onSubmitCallbackMap, setConnections } from '../../components/diagram-editor/util';
+import { CreateNode, onSubmitCallbackMap, setConnections } from '../../components/diagram-editor/util';
 import { AutoSizer, CellMeasurer, CellMeasurerCache, List } from 'react-virtualized';
-import SearchField from "react-search-field";
 import Fuse from 'fuse.js';
 import { ActionsNodes, NodeStateAction } from "../../components/diagram-editor/nodes";
-import { useNamespaceServices } from "direktiv-react-hooks";
 
 
 
-import SearchInput, { createFilter } from 'react-search-input'
-import { exampleWorkflow, importFromYAML } from '../../components/diagram-editor/import';
-import Modal, { ButtonDefinition } from '../modal';
+import { importFromYAML } from '../../components/diagram-editor/import';
+import Modal, { ButtonDefinition, ModalHeadless } from '../modal';
 
 import Ajv from "ajv"
 
@@ -74,7 +68,7 @@ function Actions(props) {
                                 <span style={{ whiteSpace: "pre-wrap", cursor: "move", fontSize: "13px" }}>
                                     {ActionsNodes[index].name}
                                 </span>
-                                <a style={{ whiteSpace: "pre-wrap", cursor: "pointer", fontSize: "11px", paddingRight: "3px" }} href={`${ActionsNodes[index].info.link}`} target="_blank">More Info</a>
+                                <a style={{ whiteSpace: "pre-wrap", cursor: "pointer", fontSize: "11px", paddingRight: "3px" }} href={`${ActionsNodes[index].info.link}`} target="_blank" rel="noreferrer">More Info</a>
 
                             </div>
                             <div style={{ fontSize: "10px", lineHeight: "10px", paddingTop: "2px" }}>
@@ -111,7 +105,7 @@ function Actions(props) {
 }
 
 function FunctionsList(props) {
-    const {functionList, setFunctionList} = props
+    const { functionList, setFunctionList, namespace } = props
 
     // const [functionList, setFunctionList] = useState([])
     const [newFunctionFormRef, setNewFunctionFormRef] = useState(null)
@@ -120,16 +114,54 @@ function FunctionsList(props) {
 
     // console.log("useNamespaceServices data = ", data)
 
+    const namespaceServiceHook = useNamespaceServices(Config.url, false, namespace, localStorage.getItem("apikey"))
+    const globalServiceHook = useGlobalServices(Config.url, false, localStorage.getItem("apikey"))
+    // const namespaceVariableHook = useNamespaceVariables(Config.url, false, namespace, localStorage.getItem("apikey"))
 
-    const ajv = new Ajv()
-    const schema = SchemaMap["functionSchema"]
-    const validate = ajv.compile(schema)
-
+    // console.log("namespaceServiceHook data = ", namespaceServiceHook.data)
+    // console.log("globalServiceHook data = ", globalServiceHook.data)
+    // console.log("namespaceVariableHook data = ", namespaceVariableHook.data)
 
     useEffect(() => {
         console.log("mounting functions list")
-        return () => { console.log("unmounting functions list")};
-    },[])
+        return () => { console.log("unmounting functions list") };
+    }, [])
+
+    // TODO: hook this up
+    // const checkFunctionList = useCallback(()=>{
+    //     console.log("formData = ", formData)
+    //     if (!formData || !formData.type) {
+    //         return {tip:"", value:"valid"}
+    //     }
+
+    //     switch (formData.type) {
+    //         case "knative-namespace":
+    //             if (namespaceServiceHook.data && !namespaceServiceHook.data.length >0 ){
+    //                 return {tip:"No Namespace Services", value:""}
+    //             }
+    //             break;
+    //         case "knative-global":
+    //             if (globalServiceHook.data && !globalServiceHook.data.length >0 ){
+    //                 return {tip:"No Global Services", value:""}
+    //             }
+    //             break;
+    //         default:
+    //     }
+    //     return {tip:"", value:"valid"}
+    // }, [formData])
+
+    if (namespaceServiceHook.data === null || globalServiceHook.data === null) {
+        return <></>
+    }
+
+    const ajv = new Ajv()
+    const schema = GenerateFunctionSchemaWithEnum(namespaceServiceHook.data.map(a => a.serviceName), (globalServiceHook.data.map(a => a.serviceName)))
+    const validate = ajv.compile(schema)
+
+
+
+
+
 
     // useEffect(()=>{
     //     const newfMap = functionsList.reduce(function(result, item, index, array) {
@@ -175,9 +207,9 @@ function FunctionsList(props) {
                                 Type: {functionList[index].type}
                             </div>
                             <div style={{ fontSize: "10px", lineHeight: "10px", paddingTop: "2px" }}>
-                                {functionList[index].service ? `Service: ${functionList[index].service}`: ""}
-                                {functionList[index].image ? `Image: ${functionList[index].image}`: ""}
-                                {functionList[index].workflow ? `Workflow: ${functionList[index].workflow}`: ""}
+                                {functionList[index].service ? `Service: ${functionList[index].service}` : ""}
+                                {functionList[index].image ? `Image: ${functionList[index].image}` : ""}
+                                {functionList[index].workflow ? `Workflow: ${functionList[index].workflow}` : ""}
                             </div>
                         </div>
 
@@ -193,19 +225,19 @@ function FunctionsList(props) {
                 style={{ justifyContent: "center" }}
                 className="run-workflow-modal"
                 modalStyle={{ color: "black" }}
-                title={`Run Workflow`}
+                title={`Create Function`}
                 onClose={() => {
-                    //TODO:
+                    setFormData({})
                 }}
-                onOpen={() => {
-                    //TODO:
-                }}
+                requiredFields={[
+                    // checkFunctionList(),
+                ]}
                 actionButtons={[
                     ButtonDefinition("Create Function", async () => {
                         newFunctionFormRef.click()
 
                         // Check if form data is valid
-                        if (!validate(formData)){
+                        if (!validate(formData)) {
                             throw Error("Invalid Function")
                         }
 
@@ -216,22 +248,23 @@ function FunctionsList(props) {
                         }
 
                         // Update list
-                        setFunctionList((oldfList)=>{
+                        setFunctionList((oldfList) => {
                             oldfList.push(formData)
                             return [...oldfList]
                         })
-                    }, "small blue", ()=>{}, true, false),
+                    }, "small blue", () => { }, true, false, true),
                     ButtonDefinition("Cancel", async () => {
-                    }, "small light", ()=>{}, true, false)
+                    }, "small light", () => { }, true, false)
                 ]}
                 button={(
                     <div className={`btn function-btn`}>
                         New function
                     </div>
+
                 )}
             >
                 <FlexBox className="col" style={{ height: "45vh", width: "35vw", minWidth: "250px", minHeight: "200px", justifyContent: "space-between" }}>
-                    <div style={{overflow: "auto"}}>
+                    <div style={{ overflow: "auto" }}>
                         {/* <label style={{fontSize: "11px", lineHeight: "13px", fontWeight: "bold"}}>
                             Choose Function Type*
                         </label>
@@ -251,7 +284,7 @@ function FunctionsList(props) {
                             }}
                             schema={schema}
                             formData={formData}
-                            onChange={(e)=>{
+                            onChange={(e) => {
                                 setFormData(e.formData)
                             }}
                         >
@@ -271,22 +304,22 @@ function FunctionsList(props) {
             {functionList.length > 0 ? (
                 <AutoSizer>
                     {({ height, width }) => (
-                            <List
-                                width={width}
-                                height={height}
-                                rowRenderer={rowRenderer}
-                                deferredMeasurementCache={cache}
-                                scrollToIndex={0}
-                                rowCount={functionList.length}
-                                rowHeight={64}
-                                scrollToAlignment={"start"}
-                            />
+                        <List
+                            width={width}
+                            height={height}
+                            rowRenderer={rowRenderer}
+                            deferredMeasurementCache={cache}
+                            scrollToIndex={0}
+                            rowCount={functionList.length}
+                            rowHeight={64}
+                            scrollToAlignment={"start"}
+                        />
                     )}
                 </AutoSizer>)
                 :
                 (<>
                     <div style={{ display: "flex", justifyContent: "center" }}>
-                        No maidens?
+                        No functions
                     </div>
                 </>)}
         </>
@@ -294,114 +327,96 @@ function FunctionsList(props) {
 }
 
 export default function DiagramEditor(props) {
-    const {workflow, namespace, updateWorkflow} = props
+    const { workflow, namespace, updateWorkflow } = props
 
     const [diagramEditor, setDiagramEditor] = useState(null);
-    const [load, setLoad] = useState(false);
+    const [load, setLoad] = useState(true);
 
-    const [selectedNodeID, setSelectedNodeID] = useState(0);
     const [selectedNode, setSelectedNode] = useState(null);
     const [formRef, setFormRef] = useState(null);
     const [error, setError] = useState(null)
-    const [mouseDown, setMouseDown] = useState(false)
 
     const [actionDrawerWidth, setActionDrawerWidth] = useState(0)
     const [actionDrawerWidthOld, setActionDrawerWidthOld] = useState(200)
     const [actionDrawerMinWidth, setActionDrawerMinWidth] = useState(0)
 
     const [functionDrawerWidth, setFunctionDrawerWidth] = useState(0)
-    const [functionDrawerWidthOld, setFunctionDrawerWidthOld] = useState(200)
     const [functionDrawerMinWidth, setFunctionDrawerMinWidth] = useState(0)
     const [functionList, setFunctionList] = useState([])
 
-    const [formDrawerWidth, setFormDrawerWidth] = useState(340)
-    const [formDrawerWidthOld, setFormDrawerWidthOld] = useState(340)
-    const [formDrawerMinWidth, setFormDrawerMinWidth] = useState(200)
-    const [formDrawerAutoShow, setFormDrawerAutoShow] = useState(true)
+    const [nodeDetailsVisible, setNodeDetailsVisible] = useState(false)
+    const [selectedNodeFormData, setSelectedNodeFormData] = useState({})
+    const [oldSelectedNodeFormData, setOldSelectedNodeFormData] = useState({})
+    const [selectedNodeSchema, setSelectedNodeSchema] = useState({})
 
     const [showContextMenu, setShowContextMenu] = useState(false);
     const [contextMenuAnchorPoint, setContextMenuAnchorPoint] = useState({ x: 0, y: 0 });
     const [contextMenuResults, setContextMenuResults] = useState(ActionsNodes)
 
     useEffect(() => {
-        console.log("mounting")
-        return () => { console.log("unmounting")};
-    },[])
+        if (selectedNode) {
+            // Update Selected Schema
+            setSelectedNodeSchema(GetSchema(selectedNode.data.schemaKey, functionList))
+        }
+    }, [selectedNode, functionList])
 
     useEffect(() => {
         var id = document.getElementById("drawflow");
-        console.log("id = ", id)
-        if (!diagramEditor) {
-            let editor = new Drawflow(id)
-            editor.start()
-            editor.on('nodeSelected', function (id) {
-                console.log("select node: ", id)
-                setSelectedNodeID(id)
-                const newNode = editor.getNodeFromId(id)
-                console.log("selected node = ", newNode)
-                setSelectedNode(newNode)
-            })
+        // if (!diagramEditor) {
+        let editor = new Drawflow(id)
+        editor.start()
+        editor.on('nodeSelected', function (id) {
+            const node = editor.getNodeFromId(id)
+            setSelectedNode(node)
+            setSelectedNodeFormData(node.data.formData)
+            setOldSelectedNodeFormData(node.data.formData)
+        })
 
-            editor.on('nodeCreated', function (id) {
-                let newNode = editor.getNodeFromId(id)
+        editor.on('nodeCreated', function (id) {
+            let node = editor.getNodeFromId(id)
 
-                // If node was created without id, geneate one
-                if (!newNode.data.id) {
-                    newNode.data.id = `node-${id}-${newNode.data.type}`
-                }
-
-                editor.updateNodeDataFromId(id, newNode.data)
-            })
-
-            editor.on('mouseUp', function (e) {
-                // console.log("mouseUp event = ", e);
-            })
-
-            editor.on('nodeUnselected', function (e) {
-                setSelectedNodeID(0)
-                setSelectedNode(null)
-                console.log("nodeUnselected event = ", e);
-            })
-
-            editor.on('nodeRemoved', function (e) {
-                setSelectedNodeID(0)
-                setSelectedNode(null)
-                console.log("nodeRemoved removed = ", e);
-            })
-
-            editor.on('click', function (e) {
-                console.log("user click event = ", e);
-                setShowContextMenu(false)
-                setMouseDown(true);
-            })
-
-            editor.on('mouseUp', function (e) {
-                console.log("user mouseUp event = ", e);
-                setMouseDown(false);
-            })
-
-
-            // editor.addNode('StartBlock', 0, 1, 1, 200, "node special start", { family: "special", type: "start", schemaKey: 'stateSchemaSwitch', formData: {} }, 'Start Block', false);
-
-            setDiagramEditor(editor)
-
-            // Import if workflow prop is passed
-            if (workflow) {
-                importFromYAML(editor, setFunctionList, workflow)
+            // If node was created without id, geneate one
+            if (!node.data.id) {
+                node.data.id = `node-${id}-${node.data.type}`
+                editor.updateNodeDataFromId(id, node.data)
             }
-        }
-    }, [diagramEditor])
+        })
 
+        editor.on('nodeUnselected', function (e) {
+            setSelectedNode(null)
+        })
+
+        editor.on('nodeRemoved', function (e) {
+            setSelectedNode(null)
+        })
+
+        editor.on('mouseUp', function (e) {
+            // Handlers for mouse up on flowchart
+            if (e && e.target && e.target.id) {
+                switch (e.target.id) {
+                    case "node-btn-edit":
+                        // Edit button was clicked on node
+                        // We can assume that a node is selected
+                        setNodeDetailsVisible(true)
+                        break;
+                    default:
+                        break;
+                }
+            }
+        })
+
+        setDiagramEditor(editor)
+    }, [])
+
+    // Import if diagram editor is mounted and workflow was passed in props
     useEffect(() => {
-        if (selectedNodeID === 0) {
-            setFormDrawerMinWidth(0)
-            setFormDrawerWidth(0)
-        } else {
-            console.log("formDrawerWidthOld = ", formDrawerWidthOld)
-            setFormDrawerMinWidth(20)
-            setFormDrawerWidth(formDrawerWidthOld)
+        if (diagramEditor && workflow) {
+            if (load) {
+                importFromYAML(diagramEditor, setFunctionList, workflow)
+            }
+            setLoad(false)
         }
-    }, [selectedNodeID, formDrawerWidthOld])
+    }, [diagramEditor, workflow, load])
 
     const resizeStyle = {
         display: "flex",
@@ -412,67 +427,23 @@ export default function DiagramEditor(props) {
         zIndex: 30,
     };
 
-
-
-    const resizeStyleForm = {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        flexDirection: "column",
-        background: "#f0f0f0",
-        zIndex: 30,
-        position: "absolute",
-        top: "0px",
-        bottom: "0px",
-        right: "0px",
-    };
-
-    function formDrawerVisibility(width, mouseIsDown) {
-        if (width === 0) {
-            return { pointerEvents: "none", opacity: 0 }
-        }
-        if (mouseIsDown) {
-            return { pointerEvents: "none", opacity: 0.5, transition: "opacity cubic-bezier(1,-0.00,.09,.59) 0.3s" }
-        }
-
-        return {}
-    }
-
-    const handleClick = useCallback(() => (showContextMenu ? setShowContextMenu(false) : null), [showContextMenu]);
+    // Update Context Menu results
     useEffect(() => {
         if (!showContextMenu) {
             setContextMenuResults(ActionsNodes)
         }
     }, [showContextMenu]);
 
+
+    // Hide Context Menu if user clicks somewhere else
+    // FIXME: Might cause problems for users who try to click on context-menu searchbar
+    const handleClick = useCallback(() => (showContextMenu ? setShowContextMenu(false) : null), [showContextMenu]);
     useEffect(() => {
         document.addEventListener("click", handleClick);
         return () => {
             document.removeEventListener("click", handleClick);
         };
     });
-
-    const getSchema = useCallback(() => {
-        let baseSchema = SchemaMap[selectedNode.data.schemaKey]
-        if (selectedNode.data.schemaKey !== "stateSchemaAction") {
-            return baseSchema
-        }
-
-
-        // TODO: convert to callback map
-        let availableFunctions = []
-        for (let i = 0; i < functionList.length; i++) {
-            const f = functionList[i];
-            availableFunctions.push(f.id)
-        }
-
-        console.log("availableFunctions = ", availableFunctions)
-
-        baseSchema.properties.action.properties.function.enum = availableFunctions
-
-        return baseSchema
-    }, [selectedNode, functionList])
-
 
     return (
         <>
@@ -495,12 +466,10 @@ export default function DiagramEditor(props) {
                     }}
                         onKeyDown={(ev) => {
                             if (ev.key === 'Enter' && contextMenuResults.length > 0) {
-                                // TODO: Make function
                                 const newNode = contextMenuResults[0].item ? contextMenuResults[0].item : contextMenuResults[0]
-                                let pos_x = contextMenuAnchorPoint.x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)));
-                                let pos_y = contextMenuAnchorPoint.y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)));
-                                diagramEditor.addNode(newNode.name, newNode.connections.input, newNode.connections.output, pos_x, pos_y, `node ${newNode.family}`, { family: newNode.family, type: newNode.type, ...newNode.data }, newNode.html, false)
+                                CreateNode(diagramEditor, newNode, contextMenuAnchorPoint.x, contextMenuAnchorPoint.y)
                                 setShowContextMenu(false)
+
                             }
                         }}
                     ></input>
@@ -510,9 +479,7 @@ export default function DiagramEditor(props) {
                                 return (
                                     <li onClick={() => {
                                         const newNode = obj.item ? obj.item : obj
-                                        let pos_x = contextMenuAnchorPoint.x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)));
-                                        let pos_y = contextMenuAnchorPoint.y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)));
-                                        diagramEditor.addNode(newNode.name, newNode.connections.input, newNode.connections.output, pos_x, pos_y, `node ${newNode.family}`, { family: newNode.family, type: newNode.type, ...newNode.data }, newNode.html, false)
+                                        CreateNode(diagramEditor, newNode, contextMenuAnchorPoint.x, contextMenuAnchorPoint.y)
                                         setShowContextMenu(false)
                                     }}>
                                         {obj.name ? obj.name : obj.item.name}
@@ -544,7 +511,6 @@ export default function DiagramEditor(props) {
                         // - Find Start Block ✓
                         // - Check if there are multiple start blocks
                         const startBlockIDs = diagramEditor.getNodesFromName("StartBlock")
-                        console.log("startBlockIDs = ", startBlockIDs)
                         let startBlock = rawData[startBlockIDs[0]];
                         let startState
 
@@ -580,7 +546,7 @@ export default function DiagramEditor(props) {
                             console.warn("updateWorkflow callback missing")
                         }
                     }}>
-                        <VscGear style={{fontSize:"256px", width:"48px"}}/>
+                        <VscGear style={{ fontSize: "256px", width: "48px" }} />
                         <div>Compile</div>
                     </div>
                     <div className='toolbar-btn' onClick={() => {
@@ -597,15 +563,15 @@ export default function DiagramEditor(props) {
                         }
                     }}>
                         {actionDrawerMinWidth === 0 ?
-                        <>
-                        <VscListUnordered style={{fontSize:"256px",  width:"48px"}}/>
-                        <div>Show Nodes</div>
-                        </>
-                        :
-                        <>
-                        <VscListUnordered style={{fontSize:"256px",  width:"48px"}}/>
-                        <div>Hide Nodes</div>
-                        </>
+                            <>
+                                <VscListUnordered style={{ fontSize: "256px", width: "48px" }} />
+                                <div>Show Nodes</div>
+                            </>
+                            :
+                            <>
+                                <VscListUnordered style={{ fontSize: "256px", width: "48px" }} />
+                                <div>Hide Nodes</div>
+                            </>
                         }
                     </div>
                     <div className='toolbar-btn' onClick={() => {
@@ -622,49 +588,19 @@ export default function DiagramEditor(props) {
                         }
                     }}>
                         {actionDrawerMinWidth === 0 ?
-                        <>
-                        <VscSymbolEvent style={{fontSize:"256px",  width:"48px"}}/>
-                        <div>Show Functions</div>
-                        </>
-                        :
-                        <>
-                        <VscSymbolEvent style={{fontSize:"256px",  width:"48px"}}/>
-                        <div>Hide Functions</div>
-                        </>
+                            <>
+                                <VscSymbolEvent style={{ fontSize: "256px", width: "48px" }} />
+                                <div>Show Functions</div>
+                            </>
+                            :
+                            <>
+                                <VscSymbolEvent style={{ fontSize: "256px", width: "48px" }} />
+                                <div>Hide Functions</div>
+                            </>
                         }
                     </div>
-                    {/* <div className='btn' onClick={() => {
-                        if (formDrawerMinWidth === 0) {
-                            setFormDrawerMinWidth(20)
-                            setFormDrawerWidth(formDrawerWidthOld)
-                        } else {
-                            setFormDrawerMinWidth(0)
-                            setFormDrawerWidth(0)
-                        }
-                    }}>
-                        <div>{formDrawerMinWidth === 0 ? "Show Details" : "Hide Details"}</div>
-                    </div> */}
-                    {/* <div className='btn' onClick={() => {
-                        if (formDrawerMinWidth === 0) {
-                            setFormDrawerMinWidth(20)
-                            setFormDrawerWidth(formDrawerWidthOld)
-                        } else {
-                            setFormDrawerMinWidth(0)
-                            setFormDrawerWidth(0)
-                        }
-                    }}>
-                        <div>Auto Show Details</div>
-                    </div> */}
-                    {/* <div className='btn' onClick={() => {
-                        importFromYAML(diagramEditor, exampleWorkflow)
-                    }}>
-                        <div>Import</div>
-                    </div> */}
-                    {/* <div>
-                        CURRENTLY SELECTED NODE: {selectedNodeID}
-                    </div> */}
                 </div>
-                <FlexBox style={{overflow: "hidden"}}>
+                <FlexBox style={{ overflow: "hidden" }}>
                     <div
                         style={{
                             width: '100%',
@@ -694,7 +630,7 @@ export default function DiagramEditor(props) {
                             style={{ ...resizeStyle, pointerEvents: functionDrawerWidth === 0 ? "none" : "", opacity: functionDrawerWidth === 0 ? 0 : 100 }}
                             size={{ width: functionDrawerWidth, height: "100%" }}
                             onResizeStop={(e, direction, ref, d) => {
-                                setFunctionDrawerWidthOld(functionDrawerWidth + d.width)
+                                setActionDrawerWidthOld(functionDrawerWidth + d.width)
                                 setFunctionDrawerWidth(functionDrawerWidth + d.width)
                             }}
                             maxWidth="40%"
@@ -702,107 +638,95 @@ export default function DiagramEditor(props) {
                         >
                             <div className={"panel left"} style={{ display: "flex" }}>
                                 <div style={{ width: "100%", margin: "10px" }}>
-                                    <FunctionsList functionList={functionList} setFunctionList={setFunctionList} namespace={namespace}/>
+                                    <FunctionsList functionList={functionList} setFunctionList={setFunctionList} namespace={namespace} />
                                 </div>
                             </div>
                         </Resizable>
                         <div id="drawflow" style={{ height: "100%", width: "100%" }}
                             onDrop={(ev) => {
-                                console.log("onDrop event = ", ev)
                                 ev.preventDefault();
-                                var nodeIndex = ev.dataTransfer.getData("nodeIndex");
-                                var functionIndex = ev.dataTransfer.getData("functionIndex");
-                                console.log("nodeIndex data = ", nodeIndex)
-                                console.log("functionIndex data = ", functionIndex)
+                                const nodeIndex = ev.dataTransfer.getData("nodeIndex");
+                                const functionIndex = ev.dataTransfer.getData("functionIndex");
+                                var newNode;
 
-                                
-
-                                let pos_x = ev.clientX
-                                let pos_y = ev.clientY
-                                pos_x = pos_x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)));
-                                pos_y = pos_y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)));
-
-                                // TODO: handle function on drop in a seperate function
+                                // Select NodeStateAction if function was dropped to quick create node
                                 if (functionIndex !== "") {
-                                    let newNode = NodeStateAction
+                                    newNode = NodeStateAction
                                     newNode.data.formData = {
                                         action: {
                                             function: functionList[functionIndex].id
                                         }
                                     }
-                                    diagramEditor.addNode(newNode.name, newNode.connections.input, newNode.connections.output, pos_x, pos_y, `node ${newNode.family}`, { family: newNode.family, type: newNode.type, ...newNode.data }, newNode.html, false)
-
-                                    return
+                                } else {
+                                    newNode = ActionsNodes[nodeIndex]
                                 }
-                                
-                                const newNode = ActionsNodes[nodeIndex]
-                                diagramEditor.addNode(newNode.name, newNode.connections.input, newNode.connections.output, pos_x, pos_y, `node ${newNode.family}`, { family: newNode.family, type: newNode.type, ...newNode.data }, newNode.html, false)
-                                // addNodeToDrawFlow(data, ev.clientX, ev.clientY);
+
+                                CreateNode(diagramEditor, newNode, ev.clientX, ev.clientY)
                             }}
                             onContextMenu={(ev) => {
-                                console.log("CONTEXT MENU EV = ", ev)
                                 ev.preventDefault()
                                 setContextMenuAnchorPoint({ x: ev.pageX, y: ev.pageY })
                                 setShowContextMenu(true)
                             }}
-                            onDragOver={(ev) => {
-                                ev.preventDefault(ev);
-                                // console.log("onDragOver event = ", ev)
-                            }}
                         >
                         </div>
-                        <Resizable
-                            style={{ ...resizeStyleForm, ...formDrawerVisibility(formDrawerWidth, mouseDown) }}
-                            onResizeStop={(e, direction, ref, d) => {
-                                setFormDrawerWidthOld(formDrawerWidthOld + d.width)
-                                setFormDrawerWidth(formDrawerWidth + d.width)
-                            }}
-                            size={{ width: formDrawerWidth, height: "100%" }}
-                            maxWidth="40%"
-                            minWidth={formDrawerMinWidth}
-                        >
-                            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", borderBottom: "1px solid #e5e5e5", paddingBottom: "6px", borderLeft: "7px solid rgb(131, 131, 131)", width: "100%" }}>
-                                <h2 style={{ margin: "6px", textAlign: "center" }}>
-                                    {selectedNode ? `${selectedNode.html} Details` : "No Node Selected"}
-                                </h2>
-                                <div className='btn' style={{ backgroundColor: "pink", cursor: "pointer", paddingTop: "0px", paddingBottom: "0px" }} onClick={() => {
+                        <ModalHeadless
+                            visible={nodeDetailsVisible}
+                            setVisible={setNodeDetailsVisible}
+                            actionButtons={[
+                                ButtonDefinition("Submit", () => {
                                     formRef.click()
-                                }}>
-                                    Submit
-                                </div>
-                            </div>
-                            <div className={"panel right"} style={{ flexDirection: "column" }}>
-                                <div style={{ minHeight: "200px", maxHeight: "100%", height: "0px" }}>
-                                    <Form
-                                        id={"builder-form"}
-                                        onSubmit={(form) => {
-                                            console.log("form.formData = ", form.formData)
+                                    const ajv = new Ajv()
+                                    const validate = ajv.compile(selectedNodeSchema)
 
-                                            // Update form data into node
-                                            const node = selectedNode
-                                            node.data.formData = form.formData
-                                            console.log("!!!node!#@!$!@$@! = ", node)
-                                            diagramEditor.updateNodeDataFromId(selectedNodeID, node.data)
+                                    // Check if form data is valid
+                                    if (!validate(selectedNodeFormData)) {
+                                        throw Error("Invalid Values")
+                                    }
 
-                                            // Do Custom callback logic if it exists for data type
-                                            let onSubmitCallback = onSubmitCallbackMap[node.name]
-                                            if (onSubmitCallback) {
-                                                onSubmitCallback(selectedNodeID, diagramEditor)
-                                                return
-                                            }
-
-                                            // Maybe make a function for this to getNode again
-                                            setSelectedNode(node)
+                                    setOldSelectedNodeFormData(selectedNodeFormData)
+                                }, "small light", () => { }, true, false),
+                                ButtonDefinition("Cancel", async () => {
+                                    setSelectedNodeFormData(oldSelectedNodeFormData)
+                                }, "small light", () => { }, true, false)
+                            ]}
+                        >
+                            <div style={{ flexDirection: "column", minWidth: "260px", width: "60vw", maxWidth: "640px" }}>
+                                <Form
+                                    id={"builder-form"}
+                                    onSubmit={(form) => {
+                                        const updatedNode = {
+                                            ...selectedNode,
+                                            data: {
+                                            ...selectedNode.data,
+                                            formData: form.formData
                                         }}
-                                        schema={selectedNode ? getSchema() : {}}
-                                        uiSchema={uiSchema}
-                                        formData={selectedNode ? selectedNode.data.formData : {}}
-                                    >
-                                        <button ref={setFormRef} style={{ display: "none" }} />
-                                    </Form>
-                                </div>
+
+                                        // Update form data into node
+                                        diagramEditor.updateNodeDataFromId(updatedNode.id, updatedNode.data)
+
+                                        // Do Custom callback logic if it exists for data type
+                                        let onSubmitCallback = onSubmitCallbackMap[updatedNode.name]
+                                        if (onSubmitCallback) {
+                                            onSubmitCallback(updatedNode.id, diagramEditor)
+                                            return
+                                        }
+
+                                        // Update SelectedNode state to updated state
+                                        setSelectedNode(updatedNode)
+                                    }}
+                                    schema={selectedNodeSchema}
+                                    uiSchema={uiSchema}
+                                    formData={selectedNodeFormData}
+                                    onChange={(e) => {
+                                        setSelectedNodeFormData(e.formData)
+                                    }}
+                                >
+                                    <button ref={setFormRef} style={{ display: "none" }} />
+                                </Form>
                             </div>
-                        </Resizable>
+                        </ModalHeadless>
+
                     </div>
                 </FlexBox>
                 {/* </div> */}

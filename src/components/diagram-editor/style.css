@@ -323,3 +323,15 @@
 #context-menu input {
     height: 24px;
 }
+
+/* Node Buttons */
+
+#builder-page .node-btn-edit {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+#builder-page .node-btn-edit:hover {
+    font-weight: bold;
+}
+

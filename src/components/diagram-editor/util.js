@@ -1,23 +1,3 @@
-import { useJQPlayground } from 'direktiv-react-hooks';
-import { useCallback, useEffect, useState } from 'react';
-import { VscFileCode, VscArrowRight } from 'react-icons/vsc';
-import Button from '../button';
-import ContentPanel, { ContentPanelBody, ContentPanelTitle, ContentPanelTitleIcon } from '../content-panel';
-import DirektivEditor from '../editor';
-import Alert from '../alert';
-import FlexBox from '../flexbox';
-import HelpIcon from '../help';
-import { Config } from '../../util';
-import './style.css';
-import Drawflow from 'drawflow';
-import { Resizable } from 're-resizable';
-import styleDrawflow from 'drawflow/dist/drawflow.min.css'
-import YAML from "json-to-pretty-yaml"
-import { ContextMenu, MenuItem, ContextMenuTrigger } from "react-contextmenu";
-
-import { SchemaMap } from "./jsonSchema"
-import Form from '@rjsf/core';
-
 //  processTransform : Converts json schema form to direktiv yaml on the properties that accept jq.
 //  Because we support both a jq string a key value json schema input, we need to process these values into
 //  something direkitv yaml can use. 
@@ -120,7 +100,7 @@ const connectionsCallbackMap = {
                 if (output.connections.length > 0) {
                     const nextNode = rawData[output.connections[0].node]
 
-                    if (i == 0) {
+                    if (i === 0) {
                         state.defaultTransition = nextNode.data.id
                     } else {
                         state.conditions[i - 1].transition = nextNode.data.id
@@ -280,3 +260,9 @@ export const onSubmitCallbackMap = {
 }
 
 
+export function CreateNode(diagramEditor, node, clientX, clientY) {
+    const posX = clientX * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)));
+    const posY = clientY * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)));
+
+    diagramEditor.addNode(node.name, node.connections.input, node.connections.output, posX, posY, `node ${node.family}`, { family: node.family, type: node.type, ...node.data }, node.html + `<div id="node-btn-edit" class="node-btn-edit">ClickME</div>`, false)
+}

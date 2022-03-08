@@ -70,7 +70,7 @@ export const CommonSchemaDefinitionStateFields = {
                 "then": {
                     "properties": {
                         "rawYAML": {
-                            "title":"YAML",
+                            "title": "YAML",
                             "type": "string",
                             "description": "Raw YAML object representation of data.",
                         }
@@ -131,6 +131,58 @@ const CommonSchemaDefinitionAction = {
             "items": {
                 "type": "string"
             }
+        }
+    }
+}
+
+const CommonSchemaDefinitionRetry = {
+    "type": "object",
+    "title": "Retry Definition",
+    "description": "Retry policy.",
+    "required": [
+        "max_attempts",
+        "codes"
+    ],
+    "properties": {
+        "max_attempts": {
+            "type": "integer",
+            "title": "Max Attempts",
+            "description": "Maximum number of retry attempts."
+        },
+        "delay": {
+            "type": "string",
+            "title": "Max Attempts",
+            "description": "Time delay between retry attempts (ISO8601)."
+        },
+        "multiplier": {
+            "type": "number",
+            "title": "Multiplier",
+            "description": "Value by which the delay is multiplied after each attempt."
+        },
+        "codes": {
+            "type": "array",
+            "title": "Secrets",
+            "minItems": 1,
+            "description": "Regex patterns to specify which error codes to catch.",
+            "items": {
+                "type": "string"
+            }
+        }
+    }
+}
+
+const CommonSchemaDefinitionError = {
+    "type": "object",
+    "title": "Retry Definition",
+    "description": "Retry policy.",
+    "required": [
+        "error"
+    ],
+    "properties": {
+        "error": {
+            "type": "string",
+            "title": "Error",
+            "description": "A glob pattern to test error codes for a match."
         }
     }
 }
@@ -682,6 +734,84 @@ export const FunctionSchemaSubflow = {
     }
 }
 
+export function GenerateFunctionSchemaWithEnum(namespaceServices, globalServices) {
+    let nsFuncSchema = FunctionSchemaNamespace
+    let globalFuncSchema = FunctionSchemaGlobal
+    console.log("namespaceServices = ", namespaceServices)
+    console.log("globalServices = ", globalServices)
+
+    if (nsFuncSchema && nsFuncSchema.length > 0) {
+        nsFuncSchema.properties.service.enum = namespaceServices
+    }
+
+    if (globalServices && globalServices.length > 0) {
+        globalFuncSchema.properties.service.enum = globalServices
+
+    }
+
+    return {
+        "type": "object",
+        "required": [
+            "type"
+        ],
+        "properties": {
+            "type": {
+                "enum": [
+                    "reusable",
+                    "knative-namespace",
+                    "knative-global",
+                    "subflow"
+                ],
+                "default": "reusable",
+                "title": "Service Type",
+                "description": "Function type of new service"
+            }
+        },
+        "allOf": [
+            {
+                "if": {
+                    "properties": {
+                        "type": {
+                            "const": "reusable"
+                        }
+                    }
+                },
+                "then": FunctionSchemaReusable
+            },
+            {
+                "if": {
+                    "properties": {
+                        "type": {
+                            "const": "knative-namespace"
+                        }
+                    }
+                },
+                "then": nsFuncSchema
+            },
+            {
+                "if": {
+                    "properties": {
+                        "type": {
+                            "const": "knative-global"
+                        }
+                    }
+                },
+                "then": globalFuncSchema
+            },
+            {
+                "if": {
+                    "properties": {
+                        "type": {
+                            "const": "subflow"
+                        }
+                    }
+                },
+                "then": FunctionSchemaSubflow
+            }
+        ]
+    }
+}
+
 export const FunctionSchema = {
     "type": "object",
     "required": [
@@ -745,6 +875,7 @@ export const FunctionSchema = {
 }
 
 
+
 // Map to all Schemas
 export const SchemaMap = {
     // States
@@ -768,6 +899,22 @@ export const SchemaMap = {
     "functionSchemaReusable": FunctionSchemaReusable,
     "functionSchemaSubflow": FunctionSchemaSubflow,
     "functionSchema": FunctionSchema
+}
+
+export function GetSchema(schemaKey, functionList, varList) {
+    let selectedSchema = SchemaMap[schemaKey]
+    if (schemaKey !== "stateSchemaAction") {
+        return selectedSchema
+    }
+
+    let availableFunctions = []
+    for (let i = 0; i < functionList.length; i++) {
+        const f = functionList[i];
+        availableFunctions.push(f.id)
+    }
+
+    selectedSchema.properties.action.properties.function.enum = availableFunctions
+    return selectedSchema
 }
 
 
