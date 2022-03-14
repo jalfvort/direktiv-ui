@@ -1,3 +1,5 @@
+import YAML from 'js-yaml'
+
 //  processTransform : Converts json schema form to direktiv yaml on the properties that accept jq.
 //  Because we support both a jq string a key value json schema input, we need to process these values into
 //  something direkitv yaml can use. 
@@ -6,7 +8,7 @@
 //  transformKey: The key of the property that contains this value. This will usually be 'transform'
 //  but there are some scenarios where it is something else. e.g. "data" from generateEvent
 function processTransform(stateData, transformKey) {
-    if (!stateData[transformKey]) {
+    if (!stateData || !stateData[transformKey]) {
         return
     }
 
@@ -31,8 +33,25 @@ function processTransform(stateData, transformKey) {
     return
 }
 
+function processArrayToObject(stateData, objectKey) {
+    if (!stateData || !stateData[objectKey]) {
+        return
+    }
+
+    const oldArray = stateData[objectKey]
+    if (!oldArray || !Array.isArray(oldArray) || oldArray.length <= 0) {
+        delete stateData[objectKey]
+    } else if (Array.isArray(oldArray)) {
+        delete stateData[objectKey]
+
+        stateData[objectKey] = {...oldArray[0]}
+    }
+    
+    return
+}
+
 // Recursively walk through nodes and sets transitions of each state
-export function setConnections(nodeID, previousNodeID, rawData, wfData) {
+export function setConnections(nodeID, previousNodeID, previousState, rawData, wfData) {
 
     // Stop recursive walk if previous node is not first connections
     // If we dont do this we'll there is a chance that we create the same state multiple times
@@ -45,7 +64,7 @@ export function setConnections(nodeID, previousNodeID, rawData, wfData) {
     let currentNode = rawData[nodeID]
     let connCallback = connectionsCallbackMap[currentNode.name]
     if (connCallback) {
-        connCallback(nodeID, previousNodeID, rawData, wfData)
+        connCallback(nodeID, previousNodeID, previousState, rawData, wfData)
         return
     }
 
@@ -63,15 +82,24 @@ export function setConnections(nodeID, previousNodeID, rawData, wfData) {
 // default handler for connections
 function processConnection(nodeID, rawData, state, wfData) {
     const currentNode = rawData[nodeID]
+    const outputKeys = Object.keys(rawData[nodeID].outputs)
+    
     // Default connections logic
-    for (const outputID in currentNode.outputs) {
+    for (let i = 0; i < outputKeys.length; i++) {
+        const outputID = outputKeys[i];
+
         if (Object.hasOwnProperty.call(currentNode.outputs, outputID)) {
             const output = currentNode.outputs[outputID];
             if (output.connections.length > 0) {
                 console.log("output.connections = ", output.connections)
                 const nextNode = rawData[output.connections[0].node]
-                state.transition = nextNode.data.id
-                setConnections(output.connections[0].node, nodeID, rawData, wfData)
+
+                // Only use first node output connection for transition
+                if (i === 0){
+                    state.transition = nextNode.data.id
+                }
+
+                setConnections(output.connections[0].node, nodeID, state, rawData, wfData)
             }
         }
     }
@@ -81,7 +109,50 @@ function processConnection(nodeID, rawData, state, wfData) {
 
 // connectionsCallbackMap : Map of functions to be used in setConnections function
 const connectionsCallbackMap = {
-    "StateSwitch": (nodeID, previousNodeID, rawData, wfData) => {
+    "ErrorBlock": (nodeID, previousNodeID, previousState, rawData, wfData) => {
+        let stateCatch = rawData[nodeID].data.formData
+        const outputKeys = Object.keys(rawData[nodeID].outputs)
+
+        // Add transitions to catched errors if connections are set
+        for (let i = 0; i < outputKeys.length; i++) {
+            const outputID = outputKeys[i];
+            
+            if (Object.hasOwnProperty.call(rawData[nodeID].outputs, outputID)) {
+                const output = rawData[nodeID].outputs[outputID];
+                if (output.connections.length > 0) {
+                    const nextNode = rawData[output.connections[0].node]
+                    stateCatch[i].transition = nextNode.data.id
+                }
+            }
+
+        }
+
+        previousState.catch = stateCatch
+
+        // Stop recursive walk if previous node is not first connections
+        // If we dont do this we'll there is a chance that we create the same state multiple times
+        if (!isFirstConnection(nodeID, previousNodeID, rawData)) {
+            return
+        }
+
+        console.log("outputKeys = ", outputKeys)
+        console.log("rawData[nodeID] = ", rawData[nodeID])
+        for (let i = 0; i < outputKeys.length; i++) {
+            const outputID = outputKeys[i];
+            if (Object.hasOwnProperty.call(rawData[nodeID].outputs, outputID)) {
+                const output = rawData[nodeID].outputs[outputID];
+                console.log("output = ", output)
+
+                if (output.connections.length > 0) {
+                    setConnections(output.connections[0].node, nodeID, previousState, rawData, wfData)
+                }
+            }
+
+        }
+
+
+    },
+    "StateSwitch": (nodeID, previousNodeID, previousState, rawData, wfData) => {
         // Stop recursive walk if previous node is not first connections
         // If we dont do this we'll there is a chance that we create the same state multiple times
         if (!isFirstConnection(nodeID, previousNodeID, rawData)) {
@@ -101,13 +172,15 @@ const connectionsCallbackMap = {
                     const nextNode = rawData[output.connections[0].node]
 
                     if (i === 0) {
+                        // First Node Connection
                         state.defaultTransition = nextNode.data.id
-                    } else {
-                        state.conditions[i - 1].transition = nextNode.data.id
+                    } else if (i > 1) {
+                        // Skip Second node connection because of error catcher
+                        state.conditions[i - 2].transition = nextNode.data.id
                     }
 
                     // FIXME: Is this right???
-                    setConnections(output.connections[0].node, nodeID, rawData, wfData)
+                    setConnections(output.connections[0].node, nodeID, state, rawData, wfData)
                 }
             }
 
@@ -115,7 +188,7 @@ const connectionsCallbackMap = {
 
         wfData.states.push(state)
     },
-    "StateEventXor": (nodeID, previousNodeID, rawData, wfData) => {
+    "StateEventXor": (nodeID, previousNodeID, previousState, rawData, wfData) => {
         // Stop recursive walk if previous node is not first connections
         // If we dont do this we'll there is a chance that we create the same state multiple times
         if (!isFirstConnection(nodeID, previousNodeID, rawData)) {
@@ -135,10 +208,13 @@ const connectionsCallbackMap = {
             if (Object.hasOwnProperty.call(rawData[nodeID].outputs, outputID)) {
                 const nodeOutput = rawData[nodeID].outputs[outputID];
                 if (nodeOutput.connections.length > 0) {
-                    const nextNode = rawData[nodeOutput.connections[0].node]
-                    state.events[i].transition = nextNode.data.id
+                    // skip first node connection (error catcher)
+                    if (i > 0) {
+                        const nextNode = rawData[nodeOutput.connections[0].node]
+                        state.events[i].transition = nextNode.data.id
+                    }
 
-                    setConnections(nodeOutput.connections[0].node, nodeID, rawData, wfData)
+                    setConnections(nodeOutput.connections[0].node, nodeID, state, rawData, wfData)
                 }
             }
 
@@ -146,7 +222,7 @@ const connectionsCallbackMap = {
 
         wfData.states.push(state)
     },
-    "StateGenerateEvent": (nodeID, previousNodeID, rawData, wfData) => {
+    "StateGenerateEvent": (nodeID, previousNodeID, previousState, rawData, wfData) => {
         // Stop recursive walk if previous node is not first connections
         // If we dont do this we'll there is a chance that we create the same state multiple times
         if (!isFirstConnection(nodeID, previousNodeID, rawData)) {
@@ -162,7 +238,7 @@ const connectionsCallbackMap = {
         // Default connections logic
         processConnection(nodeID, rawData, state, wfData)
     },
-    "StateSetter": (nodeID, previousNodeID, rawData, wfData) => {
+    "StateSetter": (nodeID, previousNodeID, previousState, rawData, wfData) => {
         // Stop recursive walk if previous node is not first connections
         // If we dont do this we'll there is a chance that we create the same state multiple times
         if (!isFirstConnection(nodeID, previousNodeID, rawData)) {
@@ -180,7 +256,7 @@ const connectionsCallbackMap = {
         // Default connections logic
         processConnection(nodeID, rawData, state, wfData)
     },
-    "StateAction": (nodeID, previousNodeID, rawData, wfData) => {
+    "StateAction": (nodeID, previousNodeID, previousState, rawData, wfData) => {
         // Stop recursive walk if previous node is not first connections
         // If we dont do this we'll there is a chance that we create the same state multiple times
         if (!isFirstConnection(nodeID, previousNodeID, rawData)) {
@@ -189,13 +265,14 @@ const connectionsCallbackMap = {
 
         let state = { id: rawData[nodeID].data.id, type: rawData[nodeID].data.type, ...rawData[nodeID].data.formData }
 
+        processArrayToObject(state.action, "retries")
         processTransform(state.action, "input")
         processTransform(state, "transform")
 
         // Default connections logic
         processConnection(nodeID, rawData, state, wfData)
     },
-    "StateForeach": (nodeID, previousNodeID, rawData, wfData) => {
+    "StateForeach": (nodeID, previousNodeID, previousState, rawData, wfData) => {
         // Stop recursive walk if previous node is not first connections
         // If we dont do this we'll there is a chance that we create the same state multiple times
         if (!isFirstConnection(nodeID, previousNodeID, rawData)) {
@@ -204,6 +281,7 @@ const connectionsCallbackMap = {
 
         let state = { id: rawData[nodeID].data.id, type: rawData[nodeID].data.type, ...rawData[nodeID].data.formData }
 
+        processArrayToObject(state.action, "retries")
         processTransform(state.action, "input")
         processTransform(state, "transform")
 
@@ -217,43 +295,70 @@ function isFirstConnection(nodeID, previousNodeID, rawData) {
     return (rawData[nodeID].inputs["input_1"].connections[0].node === `${previousNodeID}`)
 }
 
+export function DefaultValidateSubmitCallbackMap(formData) {
+    console.log("formData.transform = ", formData.transform)
+    if (formData.transform && formData.transform.selectionType === "YAML" && formData.transform.rawYAML !== "") {
+        try {
+            console.log("attempting to load yaml")
+            let test = YAML.load(formData.transform.rawYAML)
+            console.log("attempting to load yaml post = ", test)
+        } catch (e) {
+            console.log("FAILED TO LOAD YAML = ", e)
+        }
+    }
+}
+
+export const onValidateSubmitCallbackMap = {
+    "Default": DefaultValidateSubmitCallbackMap
+}
+
 export const onSubmitCallbackMap = {
     "StateSwitch": (nodeID, diagramEditor) => {
         const node = diagramEditor.getNodeFromId(nodeID)
         let conditionsLength = node.data.formData.conditions ? node.data.formData.conditions.length : 0
-        let outputLen = Object.keys(node.outputs).length
-        for (let i = 0; i < conditionsLength; i++) {
+        // outputLen : Is the outputs minus the error and default transition outputs
+        const outputLen = Object.keys(node.outputs).length - 2
 
-            if (2 + i > outputLen) {
-                diagramEditor.addNodeOutput(node.id)
-            }
+        // Add Missing Node Outputs
+        for (let i = outputLen; i < conditionsLength; i++) {
+            diagramEditor.addNodeOutput(node.id)
         }
 
-        for (let i = 0; i < outputLen - 1; i++) {
-            if (1 + i > conditionsLength) {
-                diagramEditor.removeNodeOutput(node.id, `output_${i + 2}`)
-            }
+        // Remove excess node outputs
+        for (let i = conditionsLength; i < outputLen; i++) {
+            diagramEditor.removeNodeOutput(node.id, `output_${i + 2}`)
         }
         
     },
     "StateEventXor": (nodeID, diagramEditor) => {
         const node = diagramEditor.getNodeFromId(nodeID)
         let eventsLength = node.data.formData.events ? node.data.formData.events.length : 0
-        console.log("node.outputs = ", node.outputs)
-        let outputLen = Object.keys(node.outputs).length
+        const outputLen = Object.keys(node.outputs).length - 1
 
-        console.log("eventsLength = ", eventsLength)
-        console.log("outputLen = ", outputLen)
-        for (let i = 0; i < eventsLength; i++) {
-            if (1 + i > outputLen) {
-                diagramEditor.addNodeOutput(node.id)
-            }
+        // Add Missing Node Outputs
+        for (let i = outputLen; i < eventsLength; i++) {
+            diagramEditor.addNodeOutput(node.id)
         }
 
-        for (let i = 0; i < outputLen; i++) {
-            if (i+1 > eventsLength) {
-                diagramEditor.removeNodeOutput(node.id, `output_${i + 1}`)
-            }
+        // Remove excess node outputs
+        for (let i = eventsLength; i < outputLen; i++) {
+            diagramEditor.removeNodeOutput(node.id, `output_${i + 1}`)
+        }
+        
+    },
+    "ErrorBlock": (nodeID, diagramEditor) => {
+        const node = diagramEditor.getNodeFromId(nodeID)
+        let errorsLength = node.data.formData ? node.data.formData.length : 0
+        const outputLen = Object.keys(node.outputs).length
+
+        // Add Missing Node Outputs
+        for (let i = outputLen; i < errorsLength; i++) {
+            diagramEditor.addNodeOutput(node.id)
+        }
+
+        // Remove excess node outputs
+        for (let i = errorsLength; i < outputLen; i++) {
+            diagramEditor.removeNodeOutput(node.id, `output_${i}`)
         }
         
     }

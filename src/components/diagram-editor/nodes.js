@@ -18,6 +18,26 @@ export const NodeStartBlock = {
     html: 'Start Block'
 }
 
+export const NodeErrorBlock = {
+    name: 'ErrorBlock',
+    family: "special",
+    type: "error",
+    info: {
+        description: "DEBUG",
+        longDescription: `DEBUG`,
+        link: ""
+    },
+    data: {
+        schemaKey: 'specialSchemaError',
+        formData: {}
+    },
+    connections: {
+        input: 1,
+        output: 0
+    },
+    html: 'Catch'
+}
+
 
 export const NodeStateAction = {
     name: 'StateAction',
@@ -34,7 +54,7 @@ export const NodeStateAction = {
     },
     connections: {
         input: 1,
-        output: 1
+        output: 2
     },
     html: 'Action State'
 }
@@ -57,7 +77,7 @@ export const ActionsNodes = [
         },
         connections: {
             input: 1,
-            output: 1
+            output: 2
         },
         html: 'Noop State'
     },
@@ -76,7 +96,7 @@ export const ActionsNodes = [
         },
         connections: {
             input: 1,
-            output: 1
+            output: 2
         },
         html: 'Consume Event State'
     },
@@ -95,7 +115,7 @@ export const ActionsNodes = [
         },
         connections: {
             input: 1,
-            output: 1
+            output: 2
         },
         html: 'Delay State'
     },
@@ -114,7 +134,7 @@ export const ActionsNodes = [
         },
         connections: {
             input: 1,
-            output: 1
+            output: 2
         },
         html: 'Error State'
     },
@@ -133,7 +153,7 @@ export const ActionsNodes = [
         },
         connections: {
             input: 1,
-            output: 1
+            output: 2
         },
         html: 'EventAnd State'
     },
@@ -152,7 +172,7 @@ export const ActionsNodes = [
         },
         connections: {
             input: 1,
-            output: 1
+            output: 1 //TODO: Special case Error output is in node 1
         },
         html: 'EventXor State'
     },
@@ -171,7 +191,7 @@ export const ActionsNodes = [
         },
         connections: {
             input: 1,
-            output: 1
+            output: 2
         },
         html: 'Foreach State'
     },
@@ -190,7 +210,7 @@ export const ActionsNodes = [
         },
         connections: {
             input: 1,
-            output: 1
+            output: 2
         },
         html: 'Generate Event State'
     },
@@ -209,7 +229,7 @@ export const ActionsNodes = [
         },
         connections: {
             input: 1,
-            output: 1
+            output: 2
         },
         html: 'Getter State'
     },
@@ -228,7 +248,7 @@ export const ActionsNodes = [
         },
         connections: {
             input: 1,
-            output: 1
+            output: 2
         },
         html: 'Setter State'
     },
@@ -248,7 +268,7 @@ export const ActionsNodes = [
         },
         connections: {
             input: 1,
-            output: 1
+            output: 2
         },
         html: 'Validate State'
     },
@@ -267,9 +287,10 @@ export const ActionsNodes = [
         },
         connections: {
             input: 1,
-            output: 1
+            output: 2
         },
         html: 'Switch State'
     },
-    NodeStartBlock
+    NodeStartBlock,
+    NodeErrorBlock
 ]

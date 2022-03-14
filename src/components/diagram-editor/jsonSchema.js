@@ -107,6 +107,46 @@ export const CommonSchemaDefinitionStateFields = {
     }
 }
 
+
+const CommonSchemaDefinitionRetry = {
+    "type": "array",
+    "title": "Retry Definition",
+    "description": "Retry policy.",
+    "maxItems": 1,
+    "items": {
+        "required": [
+            "max_attempts",
+            "codes"
+        ],
+        "properties": {
+            "max_attempts": {
+                "type": "number",
+                "title": "Max Attempts",
+                "description": "Maximum number of retry attempts."
+            },
+            "delay": {
+                "type": "string",
+                "title": "Delay",
+                "description": "Time delay between retry attempts (ISO8601)."
+            },
+            "multiplier": {
+                "type": "number",
+                "title": "Multiplier",
+                "description": "Value by which the delay is multiplied after each attempt."
+            },
+            "codes": {
+                "type": "array",
+                "title": "Codes",
+                "minItems": 1,
+                "description": "Regex patterns to specify which error codes to catch.",
+                "items": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
+
 const CommonSchemaDefinitionAction = {
     "type": "object",
     "title": "Action Definition",
@@ -131,59 +171,8 @@ const CommonSchemaDefinitionAction = {
             "items": {
                 "type": "string"
             }
-        }
-    }
-}
-
-const CommonSchemaDefinitionRetry = {
-    "type": "object",
-    "title": "Retry Definition",
-    "description": "Retry policy.",
-    "required": [
-        "max_attempts",
-        "codes"
-    ],
-    "properties": {
-        "max_attempts": {
-            "type": "integer",
-            "title": "Max Attempts",
-            "description": "Maximum number of retry attempts."
         },
-        "delay": {
-            "type": "string",
-            "title": "Max Attempts",
-            "description": "Time delay between retry attempts (ISO8601)."
-        },
-        "multiplier": {
-            "type": "number",
-            "title": "Multiplier",
-            "description": "Value by which the delay is multiplied after each attempt."
-        },
-        "codes": {
-            "type": "array",
-            "title": "Secrets",
-            "minItems": 1,
-            "description": "Regex patterns to specify which error codes to catch.",
-            "items": {
-                "type": "string"
-            }
-        }
-    }
-}
-
-const CommonSchemaDefinitionError = {
-    "type": "object",
-    "title": "Retry Definition",
-    "description": "Retry policy.",
-    "required": [
-        "error"
-    ],
-    "properties": {
-        "error": {
-            "type": "string",
-            "title": "Error",
-            "description": "A glob pattern to test error codes for a match."
-        }
+        "retries": CommonSchemaDefinitionRetry
     }
 }
 
@@ -529,6 +518,25 @@ export const StateSchemaSwitch = {
     }
 }
 
+// Special
+const SpecialSchemaError = {
+    "type": "array",
+    "title": "Error Handling",
+    "description": "Thrown erros will be compared against each Error in order until it finds a match.",
+    "items": {
+        "required": [
+            "error"
+        ],
+        "properties": {
+            "error": {
+                "type": "string",
+                "title": "Error",
+                "description": "A glob pattern to test error codes for a match."
+            }
+        }
+    }
+}
+
 // Functions Schemas
 export const FunctionSchemaGlobal = {
     "type": "object",
@@ -737,8 +745,8 @@ export const FunctionSchemaSubflow = {
 export function GenerateFunctionSchemaWithEnum(namespaceServices, globalServices) {
     let nsFuncSchema = FunctionSchemaNamespace
     let globalFuncSchema = FunctionSchemaGlobal
-    console.log("namespaceServices = ", namespaceServices)
-    console.log("globalServices = ", globalServices)
+    // console.log("namespaceServices = ", namespaceServices)
+    // console.log("globalServices = ", globalServices)
 
     if (nsFuncSchema && nsFuncSchema.length > 0) {
         nsFuncSchema.properties.service.enum = namespaceServices
@@ -898,7 +906,10 @@ export const SchemaMap = {
     "functionSchemaNamespace": FunctionSchemaNamespace,
     "functionSchemaReusable": FunctionSchemaReusable,
     "functionSchemaSubflow": FunctionSchemaSubflow,
-    "functionSchema": FunctionSchema
+    "functionSchema": FunctionSchema,
+
+    // Special
+    "specialSchemaError": SpecialSchemaError,
 }
 
 export function GetSchema(schemaKey, functionList, varList) {

@@ -1,4 +1,4 @@
-import { ActionsNodes, NodeStartBlock } from "./nodes";
+import { ActionsNodes, NodeErrorBlock, NodeStartBlock } from "./nodes";
 import YAML from 'js-yaml'
 
 
@@ -66,6 +66,7 @@ states:
 export function importFromYAML(diagramEditor, setFunctions, wfYAML) {
     const wfData = YAML.load(wfYAML)
     let nodeIDToStateIDMap = {}
+    let catchNodes = []
     let pos = { x: 20, y: 200 }
 
     // Set functions
@@ -103,6 +104,7 @@ export function importFromYAML(diagramEditor, setFunctions, wfYAML) {
 
         delete newNodeData["type"]
         delete newNodeData["id"]
+        delete newNodeData["catch"]
         console.log("2state.id = ", state.id)
 
         // Convert transform
@@ -117,7 +119,7 @@ export function importFromYAML(diagramEditor, setFunctions, wfYAML) {
 
         console.log("newNodeData = ", newNodeData)
         console.log("IMPORT newNode = ", newNode)
-
+        console.log("state = ", state)
 
         const nodeID = diagramEditor.addNode(newNode.name, newNode.connections.input, newNode.connections.output, pos.x, pos.y, `node ${newNode.family}`, {
             family: newNode.family,
@@ -126,6 +128,24 @@ export function importFromYAML(diagramEditor, setFunctions, wfYAML) {
             formData: newNodeData,
             schemaKey: newNode.data.schemaKey
         }, newNode.html + `<div id="node-btn-edit" class="node-btn-edit">ClickME</div>`, false)
+
+        // Add Catch Node
+        if (state.catch) {
+            pos.x += 220
+            // TODO: make sure this only gets created once
+            const errorNode = NodeErrorBlock
+            const generatedPseudoCatchID = `SPECIAL-ERROR: `+state.id
+            const catchNodeID = diagramEditor.addNode(errorNode.name, errorNode.connections.input, state.catch.length, pos.x, pos.y+80, `node ${errorNode.family}`, {
+                family: errorNode.family,
+                type: errorNode.type,
+                id: generatedPseudoCatchID,
+                formData: state.catch,
+                schemaKey: "specialSchemaError"
+            }, errorNode.html + `<div id="node-btn-edit" class="node-btn-edit">ClickME</div>`, false)
+            nodeIDToStateIDMap[generatedPseudoCatchID] = catchNodeID
+
+            catchNodes.push({id: catchNodeID, catch: state.catch})
+        }
 
         console.log("state.id = ", state.id)
 
@@ -138,11 +158,17 @@ export function importFromYAML(diagramEditor, setFunctions, wfYAML) {
     for (let i = 0; i < wfData.states.length; i++) {
         const state = wfData.states[i];
         const nodeID = nodeIDToStateIDMap[state.id]
+        const pseudoCatchID = `SPECIAL-ERROR: `+state.id
         const node = diagramEditor.getNodeFromId(nodeID)
 
         // Connect Start Node to first state
         if (i === 0) {
             diagramEditor.addConnection(startNodeID, nodeID, 'output_1', 'input_1')
+        }
+
+        if (state.catch) {
+            const catchNodeID = nodeIDToStateIDMap[pseudoCatchID]
+            diagramEditor.addConnection(nodeID, catchNodeID, 'output_2', 'input_1')
         }
 
         let connCallback = importConnectionsCallbackMap[node.name]
@@ -156,6 +182,17 @@ export function importFromYAML(diagramEditor, setFunctions, wfYAML) {
             const nextNodeID = nodeIDToStateIDMap[state.transition]
             console.log("nextNodeID = ", nodeIDToStateIDMap)
             diagramEditor.addConnection(nodeID, nextNodeID, 'output_1', 'input_1')
+        }
+    }
+
+    for (let i = 0; i < catchNodes.length; i++) {
+        const catchNode = catchNodes[i]
+        console.log("catchNode = ", catchNode)
+        for (let j = 0; j < catchNode.catch.length; j++) {
+            const err = catchNode.catch[j];
+            const nextNodeID = nodeIDToStateIDMap[err.transition]
+            console.log("nextNodeID = ", nextNodeID)
+            diagramEditor.addConnection(catchNode.id, nextNodeID, `output_${j+1}`, 'input_1')
         }
     }
 
@@ -180,7 +217,7 @@ const importConnectionsCallbackMap = {
                 diagramEditor.updateConnectionNodes(`node-${nextNodeID}`);
 
                 diagramEditor.addNodeOutput(nodeID)
-                diagramEditor.addConnection(nodeID, nextNodeID, `output_${i + 2}`, 'input_1')
+                diagramEditor.addConnection(nodeID, nextNodeID, `output_${i + 3}`, 'input_1')
 
             }
         }
@@ -202,7 +239,7 @@ const importConnectionsCallbackMap = {
                     diagramEditor.addNodeOutput(nodeID)
                 }
 
-                diagramEditor.addConnection(nodeID, nextNodeID, `output_${i + 1}`, 'input_1')
+                diagramEditor.addConnection(nodeID, nextNodeID, `output_${i + 2}`, 'input_1')
 
             }
         } else {
@@ -238,6 +275,20 @@ function importDefaultProcessTransformCallback(state, transformKey) {
     }
 }
 
+function importConvertObjectToArray(state, objectKey) {
+    const oldObject = state[objectKey]
+    if (!oldObject) {
+        delete state[objectKey]
+    } else if (typeof state[objectKey] === "object") {
+        delete state[objectKey]
+
+        state[objectKey] = [{
+            ...oldObject
+        }]
+    }
+}
+
+// TODO: This should be changed from transform callback to just general processing required form state to node
 const importProcessTransformCallback = {
     "Default": (state) => { importDefaultProcessTransformCallback(state, "transform") },
     "StateEventXor": (state) => {
@@ -259,10 +310,12 @@ const importProcessTransformCallback = {
     },
     "StateForeach": (state) => {
         importDefaultProcessTransformCallback(state.action, "input")
+        importConvertObjectToArray(state.action, "retries")
         importDefaultProcessTransformCallback(state, "transform")
     },
     "StateAction": (state) => {
         importDefaultProcessTransformCallback(state.action, "input")
+        importConvertObjectToArray(state.action, "retries")
         importDefaultProcessTransformCallback(state, "transform")
     }
 }

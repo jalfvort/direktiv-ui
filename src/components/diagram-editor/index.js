@@ -14,7 +14,7 @@ import styleDrawflow from 'drawflow/dist/drawflow.min.css'
 
 import { GenerateFunctionSchemaWithEnum, GetSchema } from "../../components/diagram-editor/jsonSchema"
 import Form from '@rjsf/core';
-import { CreateNode, onSubmitCallbackMap, setConnections } from '../../components/diagram-editor/util';
+import { CreateNode, DefaultValidateSubmitCallbackMap, onSubmitCallbackMap, setConnections } from '../../components/diagram-editor/util';
 import { AutoSizer, CellMeasurer, CellMeasurerCache, List } from 'react-virtualized';
 import Fuse from 'fuse.js';
 import { ActionsNodes, NodeStateAction } from "../../components/diagram-editor/nodes";
@@ -533,7 +533,7 @@ export default function DiagramEditor(props) {
 
                         // Set Transitions
                         console.log(" rawData = ", rawData)
-                        setConnections(startState.id, startBlock.id, rawData, wfData)
+                        setConnections(startState.id, startBlock.id, null, rawData, wfData)
                         wfData.states.reverse()
 
                         console.log("wfData = ", wfData)
@@ -673,6 +673,7 @@ export default function DiagramEditor(props) {
                         <ModalHeadless
                             visible={nodeDetailsVisible}
                             setVisible={setNodeDetailsVisible}
+                            title={`TODO:`}
                             actionButtons={[
                                 ButtonDefinition("Submit", () => {
                                     formRef.click()
@@ -682,6 +683,28 @@ export default function DiagramEditor(props) {
                                     // Check if form data is valid
                                     if (!validate(selectedNodeFormData)) {
                                         throw Error("Invalid Values")
+                                    }
+
+                                    const updatedNode = {
+                                        ...selectedNode,
+                                        data: {
+                                        ...selectedNode.data,
+                                        formData: selectedNodeFormData
+                                    }}
+
+                                    // Preflight custom formData
+                                    DefaultValidateSubmitCallbackMap(selectedNodeFormData)
+
+                                    // Update form data into node
+                                    diagramEditor.updateNodeDataFromId(updatedNode.id, updatedNode.data)
+
+                                    // Do Custom callback logic if it exists for data type
+                                    let onSubmitCallback = onSubmitCallbackMap[updatedNode.name]
+                                    if (onSubmitCallback) {
+                                        onSubmitCallback(updatedNode.id, diagramEditor)
+                                    } else {                                    
+                                        // Update SelectedNode state to updated state
+                                        setSelectedNode(updatedNode)
                                     }
 
                                     setOldSelectedNodeFormData(selectedNodeFormData)
@@ -694,27 +717,7 @@ export default function DiagramEditor(props) {
                             <div style={{ flexDirection: "column", minWidth: "260px", width: "60vw", maxWidth: "640px" }}>
                                 <Form
                                     id={"builder-form"}
-                                    onSubmit={(form) => {
-                                        const updatedNode = {
-                                            ...selectedNode,
-                                            data: {
-                                            ...selectedNode.data,
-                                            formData: form.formData
-                                        }}
-
-                                        // Update form data into node
-                                        diagramEditor.updateNodeDataFromId(updatedNode.id, updatedNode.data)
-
-                                        // Do Custom callback logic if it exists for data type
-                                        let onSubmitCallback = onSubmitCallbackMap[updatedNode.name]
-                                        if (onSubmitCallback) {
-                                            onSubmitCallback(updatedNode.id, diagramEditor)
-                                            return
-                                        }
-
-                                        // Update SelectedNode state to updated state
-                                        setSelectedNode(updatedNode)
-                                    }}
+                                    onSubmit={(form) => {}}
                                     schema={selectedNodeSchema}
                                     uiSchema={uiSchema}
                                     formData={selectedNodeFormData}
