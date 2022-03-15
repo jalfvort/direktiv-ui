@@ -394,7 +394,7 @@ export default function DiagramEditor(props) {
             // Handlers for mouse up on flowchart
             if (e && e.target && e.target.id) {
                 switch (e.target.id) {
-                    case "node-btn-edit":
+                    case "node-btn":
                         // Edit button was clicked on node
                         // We can assume that a node is selected
                         setNodeDetailsVisible(true)

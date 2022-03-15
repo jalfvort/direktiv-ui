@@ -35,7 +35,7 @@ export const NodeErrorBlock = {
         input: 1,
         output: 0
     },
-    html: 'Catch'
+    html: 'Catch Block'
 }
 
 
