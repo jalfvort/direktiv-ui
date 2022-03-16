@@ -59,9 +59,14 @@ function Actions(props) {
             >
                 <div style={{ ...style, minHeight: "90px", height: "90px", cursor: "move", userSelect: "none", display: "flex" }}>
                     <div className={`action ${ActionsNodes[index].family} action-${ActionsNodes[index].type}`} draggable={true} node-index={index} onDragStart={(ev) => {
+                        ev.stopPropagation();
+
                         console.log("onDragStart = ", ev);
                         console.log("ev.target.getAttribute(node-index) = ", ev.target.getAttribute("node-index"))
                         ev.dataTransfer.setData("nodeIndex", ev.target.getAttribute("node-index"));
+                        // ev.preventDefault();
+
+
                     }}>
                         <div style={{ marginLeft: "5px" }}>
                             <div style={{ display: "flex", borderBottom: "1px solid #e5e5e5", justifyContent: "space-between" }}>
@@ -188,13 +193,27 @@ function FunctionsList(props) {
                 columnIndex={0}
                 rowIndex={index}
             >
-                <div style={{ ...style, minHeight: "6px", height: "64px", cursor: "move", userSelect: "none", display: "flex" }}>
+                <div style={{ ...style, minHeight: "6px", height: "84px", cursor: "move", userSelect: "none", display: "flex" }}>
                     <div className={`function`} draggable={true} function-index={index} onDragStart={(ev) => {
                         // console.log("onDragStart = ", ev);
                         // console.log("ev.target.getAttribute(node-index) = ", ev.target.getAttribute("node-index"))
                         ev.dataTransfer.setData("functionIndex", ev.target.getAttribute("function-index"));
                     }}>
-                        <div style={{ marginLeft: "5px" }}>
+                        <div class="node-labels" style={{display:"flex", gap:"4px", flexDirection:"column", marginLeft: "5px"}}>
+            <div>
+                ID: <span class="label-id">{functionList[index].id}</span>
+            </div>
+            <div>
+                Type: <span class="label-type">{functionList[index].type}</span>
+            </div>
+            <div>
+                Image: <span class="label-type">{functionList[index].service ? `${functionList[index].service}` : ""}
+                                {functionList[index].image ? `${functionList[index].image}` : ""}
+                                {functionList[index].workflow ? `${functionList[index].workflow}` : ""}</span>
+            </div>
+        </div>
+
+                        {/* <div style={{ marginLeft: "5px" }}>
                             <div style={{ display: "flex", borderBottom: "1px solid #e5e5e5", justifyContent: "space-between" }}>
                                 <span style={{ whiteSpace: "pre-wrap", cursor: "move", fontSize: "13px" }}>
                                     ID: {functionList[index].id}
@@ -207,11 +226,9 @@ function FunctionsList(props) {
                                 Type: {functionList[index].type}
                             </div>
                             <div style={{ fontSize: "10px", lineHeight: "10px", paddingTop: "2px" }}>
-                                {functionList[index].service ? `Service: ${functionList[index].service}` : ""}
-                                {functionList[index].image ? `Image: ${functionList[index].image}` : ""}
-                                {functionList[index].workflow ? `Workflow: ${functionList[index].workflow}` : ""}
+                                
                             </div>
-                        </div>
+                        </div> */}
 
                     </div>
                 </div>
@@ -311,7 +328,7 @@ function FunctionsList(props) {
                             deferredMeasurementCache={cache}
                             scrollToIndex={0}
                             rowCount={functionList.length}
-                            rowHeight={64}
+                            rowHeight={84}
                             scrollToAlignment={"start"}
                         />
                     )}
@@ -643,7 +660,11 @@ export default function DiagramEditor(props) {
                             </div>
                         </Resizable>
                         <div id="drawflow" style={{ height: "100%", width: "100%" }}
+                            onDragOver={(ev)=>{
+                                ev.preventDefault();
+                            }}
                             onDrop={(ev) => {
+                                console.log("on drop event tirggered")
                                 ev.preventDefault();
                                 const nodeIndex = ev.dataTransfer.getData("nodeIndex");
                                 const functionIndex = ev.dataTransfer.getData("functionIndex");

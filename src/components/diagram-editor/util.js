@@ -366,8 +366,48 @@ export const onSubmitCallbackMap = {
 
 
 export function CreateNode(diagramEditor, node, clientX, clientY) {
+    var newNodeHTML
     const posX = clientX * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().x * (diagramEditor.precanvas.clientWidth / (diagramEditor.precanvas.clientWidth * diagramEditor.zoom)));
     const posY = clientY * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)) - (diagramEditor.precanvas.getBoundingClientRect().y * (diagramEditor.precanvas.clientHeight / (diagramEditor.precanvas.clientHeight * diagramEditor.zoom)));
 
-    diagramEditor.addNode(node.name, node.connections.input, node.connections.output, posX, posY, `node ${node.family}`, { family: node.family, type: node.type, ...node.data }, node.html + `<div id="node-btn-edit" class="node-btn-edit">ClickME</div>`, false)
+    // Generate HTML
+    switch (node.family) {
+        case "special":
+            newNodeHTML = `<div class="node-labels">
+            <div>
+                <span class="label-type">${node.html}</span>
+            </div>
+        </div>`
+            break;
+        case "primitive":
+            newNodeHTML = `<div class="node-labels">
+            <div>
+                ID: <input class="label-id" type="text" df-id>
+            </div>
+            <div>
+                Type: <span class="label-type">${node.html}</span>
+            </div>
+        </div>`
+            break
+        default:
+            newNodeHTML = `<div class="node-labels">
+            <div>
+                <span class="label-type">${node.html}</span>
+            </div>
+        </div>`
+            break;
+    }
+
+    // Add Action to HTML
+    if (node.info.actions) {
+        newNodeHTML += `
+    <div class="node-actions">
+        <span id="node-btn" class="node-btn">
+            ...
+        </span>
+    </div>`
+    }
+
+
+    diagramEditor.addNode(node.name, node.connections.input, node.connections.output, posX, posY, `node ${node.family} type-${node.type}`, { family: node.family, type: node.type, ...node.data }, newNodeHTML, false)
 }

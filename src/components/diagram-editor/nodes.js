@@ -3,6 +3,7 @@ export const NodeStartBlock = {
     family: "special",
     type: "start",
     info: {
+        actions: false,
         description: "DEBUG",
         longDescription: `DEBUG`,
         link: ""
@@ -23,6 +24,7 @@ export const NodeErrorBlock = {
     family: "special",
     type: "error",
     info: {
+        actions: true,
         description: "DEBUG",
         longDescription: `DEBUG`,
         link: ""
@@ -44,6 +46,7 @@ export const NodeStateAction = {
     family: "primitive",
     type: "action",
     info: {
+        actions: true,
         description: "The Action State runs another workflow as a subflow, or a function as defined in the forms action definition",
         longDescription: ``,
         link: "https://docs.direktiv.io/v0.6.0/specification/#actionstate"
@@ -67,6 +70,7 @@ export const ActionsNodes = [
         family: "primitive",
         type: "noop",
         info: {
+        actions: true,
             description: "The No-op State exists for when nothing more than generic state functionality is required.",
             longDescription: `The No-op State exists for when nothing more than generic state functionality is required. A common use-case would be to perform a jq operation on the state data without performing another operation.`,
             link: ""
@@ -86,6 +90,7 @@ export const ActionsNodes = [
         family: "primitive",
         type: "consumeEvent",
         info: {
+        actions: true,
             description: "todo",
             longDescription: `todo`,
             link: ""
@@ -105,6 +110,7 @@ export const ActionsNodes = [
         family: "primitive",
         type: "delay",
         info: {
+        actions: true,
             description: "todo",
             longDescription: `todo`,
             link: ""
@@ -124,6 +130,7 @@ export const ActionsNodes = [
         family: "primitive",
         type: "error",
         info: {
+        actions: true,
             description: "todo",
             longDescription: `todo`,
             link: ""
@@ -143,6 +150,7 @@ export const ActionsNodes = [
         family: "primitive",
         type: "eventAnd",
         info: {
+        actions: true,
             description: "todo",
             longDescription: `todo`,
             link: ""
@@ -162,6 +170,7 @@ export const ActionsNodes = [
         family: "primitive",
         type: "eventXor",
         info: {
+        actions: true,
             description: "todo",
             longDescription: `todo`,
             link: ""
@@ -181,6 +190,7 @@ export const ActionsNodes = [
         family: "primitive",
         type: "foreach",
         info: {
+        actions: true,
             description: "todo",
             longDescription: `todo`,
             link: ""
@@ -200,6 +210,7 @@ export const ActionsNodes = [
         family: "primitive",
         type: "generateEvent",
         info: {
+        actions: true,
             description: "todo",
             longDescription: `todo`,
             link: ""
@@ -219,6 +230,7 @@ export const ActionsNodes = [
         family: "primitive",
         type: "getter",
         info: {
+        actions: true,
             description: "todo",
             longDescription: `todo`,
             link: ""
@@ -238,6 +250,7 @@ export const ActionsNodes = [
         family: "primitive",
         type: "setter",
         info: {
+        actions: true,
             description: "todo",
             longDescription: `todo`,
             link: ""
@@ -258,6 +271,7 @@ export const ActionsNodes = [
         family: "primitive",
         type: "validate",
         info: {
+        actions: true,
             description: "todo",
             longDescription: `todo`,
             link: ""
@@ -277,6 +291,7 @@ export const ActionsNodes = [
         family: "primitive",
         type: "switch",
         info: {
+        actions: true,
             description: "The Switch State is used to perform conditional transitions based on the current state information",
             longDescription: ``,
             link: "https://docs.direktiv.io/v0.6.0/specification/#switchstate"
