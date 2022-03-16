@@ -13,7 +13,7 @@
 }
 
 /* Default/Fallback Node Variables */
-.node {
+.node, .action {
     --background: #F7FBFD;
     --box-shadow: 1px 2px 5px rgba(86, 104, 117, 0.11);
     --border: 1px solid #CFDAE1;
@@ -32,17 +32,23 @@
 }
 
 /* Primitive Node Type Variables */
-.node.primitive {
+.node.primitive, .action.primitive {
     --background: #F7FBFD;
     --box-shadow: 1px 2px 5px rgba(86, 104, 117, 0.11);
     --border: 1px solid #CFDAE1;
 }
 
 /* Special Node Type Variables */
-.node.special {
+.node.special, .action.special {
     --background: #caf5e1;
     --box-shadow: 1px 2px 5px rgba(86, 104, 117, 0.11);
     --border: 1px solid #CFDAE1;
+}
+
+.node.special.type-error{
+    --background: #ffeebc ;
+    --box-shadow: 1px 2px 5px rgba(86, 104, 117, 0.11);
+    --border: 1px solid #e1e1cf;
 }
 
 .jq-example{
@@ -335,19 +341,15 @@
 
 #builder-page .action {
     width: 100%;
-    margin: 6px;
-    border-radius: 2.42892px;
-}
-#builder-page .action.primitive {
-    border: 1px solid hsl(var(--primitive-accent), 70%);
-    box-shadow: 1.21446px 1.21446px 3.64339px hsla(var(--primitive-accent), 90%, 1.24);
-    background-color: hsl(var(--primitive-accent), 90%);
+    margin: 5px;
+    border-radius: 4px;
+    background: var(--background);
+    box-shadow: var(--box-shadow);
+    border: var(--border);
 }
 
-#builder-page .action.special {
-    border: 1px solid hsl(var(--special-accent), 70%);
-    box-shadow: 1.21446px 1.21446px 3.64339px hsla(var(--special-accent), 90%, 1.24);
-    background-color: hsl(var(--special-accent), 90%);
+#builder-page .action span {
+    color: #082032;
 }
 
 /* Function Bar */
@@ -418,3 +420,71 @@
     font-weight: bold;
 }
 
+
+
+/* FORM!!!!!!!!!!! PLEASE MOVE */
+#builder-page #root_action_input_keyValue {
+
+}
+
+#builder-page #root_action_input_keyValue > div .row{
+    display: flex;
+}
+
+#builder-page #root_action_input_keyValue > div .row > .form-additional{
+    flex:1;
+    width: 10%;
+    min-width: 100px;
+    max-width: 400px;
+}
+
+#builder-page #root_action_input_keyValue > div .row > .form-group.form-additional{
+    flex:4;
+}
+
+/* Key Value labels */
+#builder-page #root_action_input_keyValue > div .row label{
+    display: none;
+}
+
+#builder-page #root_action_input_keyValue > div:first-of-type  .row label{
+    display: unset;
+    visibility: hidden;
+    position: relative;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+#builder-page #root_action_input_keyValue > div:first-of-type .row  .form-additional label:after{
+    visibility: visible;
+    position: absolute;
+    top: 0;
+    left: 0;
+    content:'Key';
+}
+
+#builder-page #root_action_input_keyValue > div:first-of-type .row  .form-group.form-additional label:after{
+    visibility: visible;
+    position: absolute;
+    top: 0;
+    left: 0;
+    content:'Value';
+}
+
+#builder-page #root_action_input_keyValue > div:first-of-type .row > div:last-of-type{
+    display: flex;
+    justify-content: end;
+    align-items: end;
+}
+
+#builder-page #root_action_input_keyValue > div .glyphicon-remove::before{
+    content: "X";
+}
+
+#builder-page #root_action_input_keyValue > div .btn.btn-danger{
+    height:24px;
+}
+
+
+
+/* PLEASE MOE TO ANOTHER FILE */

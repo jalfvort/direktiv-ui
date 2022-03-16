@@ -82,7 +82,7 @@ export function importFromYAML(diagramEditor, setFunctions, wfYAML) {
         </div>
     </div>
     `
-    const startNodeID = diagramEditor.addNode(NodeStartBlock.name, NodeStartBlock.connections.input, NodeStartBlock.connections.output, pos.x, pos.y, `node ${NodeStartBlock.family}`, {
+    const startNodeID = diagramEditor.addNode(NodeStartBlock.name, NodeStartBlock.connections.input, NodeStartBlock.connections.output, pos.x, pos.y, `node ${NodeStartBlock.family} type-${NodeStartBlock.type}`, {
         family: NodeStartBlock.family,
         type: NodeStartBlock.type,
         formData: {},
@@ -144,7 +144,7 @@ export function importFromYAML(diagramEditor, setFunctions, wfYAML) {
         </div>
         `
 
-        const nodeID = diagramEditor.addNode(newNode.name, newNode.connections.input, newNode.connections.output, pos.x, pos.y, `node ${newNode.family}`, {
+        const nodeID = diagramEditor.addNode(newNode.name, newNode.connections.input, newNode.connections.output, pos.x, pos.y, `node ${newNode.family} type-${newNode.type}`, {
             family: newNode.family,
             type: newNode.type,
             id: state.id,
@@ -170,7 +170,7 @@ export function importFromYAML(diagramEditor, setFunctions, wfYAML) {
                 </span>
             </div>
             `
-            const catchNodeID = diagramEditor.addNode(errorNode.name, errorNode.connections.input, state.catch.length, pos.x, pos.y+80, `node ${errorNode.family}`, {
+            const catchNodeID = diagramEditor.addNode(errorNode.name, errorNode.connections.input, state.catch.length, pos.x, pos.y+80, `node ${errorNode.family} type-${errorNode.type}`, {
                 family: errorNode.family,
                 type: errorNode.type,
                 id: generatedPseudoCatchID,
